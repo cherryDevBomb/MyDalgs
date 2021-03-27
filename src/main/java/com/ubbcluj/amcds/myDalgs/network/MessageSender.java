@@ -21,10 +21,10 @@ public class MessageSender {
         CommunicationProtocol.Message outerMessage = CommunicationProtocol.Message
                 .newBuilder()
                 .setType(CommunicationProtocol.Message.Type.NETWORK_MESSAGE)
+                .setNetworkMessage(networkMessage)
 //                .setFromAbstractionId(message.getFromAbstractionId())
                 .setToAbstractionId(message.getToAbstractionId())
                 .setSystemId(ProcessConstants.SYSTEM_ID)
-                .setNetworkMessage(networkMessage)
                 .setMessageUuid(UUID.randomUUID().toString())
                 .build();
 
