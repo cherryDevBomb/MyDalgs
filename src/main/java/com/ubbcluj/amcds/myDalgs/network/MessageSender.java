@@ -1,6 +1,6 @@
 package com.ubbcluj.amcds.myDalgs.network;
 
-import com.ubbcluj.amcds.myDalgs.communication.CommunicationProtocol;
+import com.ubbcluj.amcds.myDalgs.communication.Protocol;
 import com.ubbcluj.amcds.myDalgs.globals.ProcessConstants;
 
 import java.io.DataOutputStream;
@@ -10,19 +10,19 @@ import java.util.UUID;
 
 public class MessageSender {
 
-    public static void send(CommunicationProtocol.Message message, CommunicationProtocol.ProcessId sender, String receiverHost, int receiverPort) {
-        CommunicationProtocol.NetworkMessage networkMessage = CommunicationProtocol.NetworkMessage
+    public static void send(Protocol.Message message, Protocol.ProcessId sender, String receiverHost, int receiverPort) {
+        Protocol.NetworkMessage networkMessage = Protocol.NetworkMessage
                 .newBuilder()
                 .setSenderHost(sender.getHost())
                 .setSenderListeningPort(sender.getPort())
                 .setMessage(message)
                 .build();
 
-        CommunicationProtocol.Message outerMessage = CommunicationProtocol.Message
+        Protocol.Message outerMessage = Protocol.Message
                 .newBuilder()
-                .setType(CommunicationProtocol.Message.Type.NETWORK_MESSAGE)
+                .setType(Protocol.Message.Type.NETWORK_MESSAGE)
                 .setNetworkMessage(networkMessage)
-//                .setFromAbstractionId(message.getFromAbstractionId())
+                .setFromAbstractionId(message.getFromAbstractionId())
                 .setToAbstractionId(message.getToAbstractionId())
                 .setSystemId(ProcessConstants.SYSTEM_ID)
                 .setMessageUuid(UUID.randomUUID().toString())

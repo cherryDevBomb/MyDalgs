@@ -1,6 +1,6 @@
 package com.ubbcluj.amcds.myDalgs;
 
-import com.ubbcluj.amcds.myDalgs.communication.CommunicationProtocol;
+import com.ubbcluj.amcds.myDalgs.communication.Protocol;
 import com.ubbcluj.amcds.myDalgs.globals.HubInfo;
 
 import java.util.Arrays;
@@ -19,8 +19,8 @@ public class Main {
         final List<Integer> processPorts = Arrays.asList(Integer.parseInt(args[3]), Integer.parseInt(args[4]), Integer.parseInt(args[5]));
         final String processOwner = args[6];
 
-        List<CommunicationProtocol.ProcessId> processIds = processPorts.stream()
-                .map(port -> CommunicationProtocol.ProcessId.newBuilder()
+        List<Protocol.ProcessId> processIds = processPorts.stream()
+                .map(port -> Protocol.ProcessId.newBuilder()
                         .setHost(processHost)
                         .setPort(port)
                         .setOwner(processOwner)

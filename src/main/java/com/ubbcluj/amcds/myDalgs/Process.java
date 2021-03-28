@@ -1,29 +1,31 @@
 package com.ubbcluj.amcds.myDalgs;
 
-import com.ubbcluj.amcds.myDalgs.communication.CommunicationProtocol;
+import com.ubbcluj.amcds.myDalgs.communication.Protocol;
 import com.ubbcluj.amcds.myDalgs.globals.HubInfo;
 import com.ubbcluj.amcds.myDalgs.globals.ProcessConstants;
+import com.ubbcluj.amcds.myDalgs.network.MessageConverter;
 import com.ubbcluj.amcds.myDalgs.network.MessageReceiver;
 import com.ubbcluj.amcds.myDalgs.network.MessageSender;
+import com.ubbcluj.amcds.myDalgs.util.IncomingMessageWrapper;
 
-import java.util.Queue;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.stream.Collectors;
 
-public class Process implements Runnable {
+public class Process implements Runnable, Observer {
 
-    private CommunicationProtocol.ProcessId process;
+    private Protocol.ProcessId process;
 
-    private final Queue<CommunicationProtocol.Message> messageQueue;
+    private final Queue<Protocol.Message> messageQueue;
+    private Map<Integer, Protocol.ProcessId> processes;
     //    private final List<Algorithm> algorithms;
-    private Set<CommunicationProtocol.ProcessId> allProcesses;
 
-    public Process(CommunicationProtocol.ProcessId process) {
+    public Process(Protocol.ProcessId process) {
         this.process = process;
         this.messageQueue = new ConcurrentLinkedQueue<>();
     }
 
+    @Override
     public void run() {
         System.out.println("Running process " + process.getOwner() + "-" + process.getIndex());
 
@@ -48,30 +50,70 @@ public class Process implements Runnable {
 //                });
             }
         };
-        new Thread(eventLoop).start();
+        Thread eventLoopThread = new Thread(eventLoop);
+        eventLoopThread.start();
 
-        new Thread(new MessageReceiver(process.getPort())).start();
+        MessageReceiver messageReceiver = new MessageReceiver(process.getPort());
+        messageReceiver.addObserver(this);
+        Thread messageReceiverThread = new Thread(messageReceiver);
+        messageReceiverThread.start();
 
         register();
+
+        try {
+            messageReceiverThread.join();
+            eventLoopThread.join();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
     }
 
     private void register() {
-        CommunicationProtocol.ProcRegistration procRegistration = CommunicationProtocol.ProcRegistration
+        Protocol.ProcRegistration procRegistration = Protocol.ProcRegistration
                 .newBuilder()
                 .setOwner(process.getOwner())
                 .setIndex(process.getIndex())
                 .build();
 
-        CommunicationProtocol.Message message = CommunicationProtocol.Message
+        Protocol.Message message = Protocol.Message
                 .newBuilder()
-                .setType(CommunicationProtocol.Message.Type.PROC_REGISTRATION)
+                .setType(Protocol.Message.Type.PROC_REGISTRATION)
                 .setProcRegistration(procRegistration)
                 .setMessageUuid(UUID.randomUUID().toString())
-//                .setFromAbstractionId("app") //TODO is this needed?
                 .setToAbstractionId("app")
                 .setSystemId(ProcessConstants.SYSTEM_ID)
                 .build();
 
         MessageSender.send(message, process, HubInfo.HOST, HubInfo.PORT);
+    }
+
+    /**
+     * This method handles an incoming NetworkMessage.
+     * If message is of type PROC_INITIALIZE_SYSTEM, it is handled by the process. Otherwise, the message is added to the queue.
+     * Triggered by calling the notifyObservers() method from the MessageReceiver after a message is received.
+     *
+     * @param o   MessageReceiver
+     * @param arg Protocol.Message
+     */
+    @Override
+    public void update(Observable o, Object arg) {
+        if (arg instanceof IncomingMessageWrapper) {
+            IncomingMessageWrapper messageWrapper = (IncomingMessageWrapper) arg;
+            Protocol.Message innerMessage = messageWrapper.getMessage();
+            if (Protocol.Message.Type.PROC_INITIALIZE_SYSTEM.equals(innerMessage.getType())) {
+                handleProcInitializeSystem(innerMessage);
+            } else {
+                Protocol.ProcessId sender = processes.get(messageWrapper.getSenderPort());
+                Protocol.Message convertedMessage = MessageConverter.createPlDeliverMessage(innerMessage, sender, messageWrapper.getToAbstractionId());
+                messageQueue.add(convertedMessage);
+            }
+        }
+    }
+
+    private void handleProcInitializeSystem(Protocol.Message message) {
+        Protocol.ProcInitializeSystem procInitializeSystem = message.getProcInitializeSystem();
+        this.processes = procInitializeSystem.getProcessesList()
+                .stream()
+                .collect(Collectors.toMap(Protocol.ProcessId::getPort, processId -> processId));
     }
 }

@@ -1,13 +1,15 @@
 package com.ubbcluj.amcds.myDalgs.network;
 
-import com.ubbcluj.amcds.myDalgs.communication.CommunicationProtocol;
+import com.ubbcluj.amcds.myDalgs.communication.Protocol;
+import com.ubbcluj.amcds.myDalgs.util.IncomingMessageWrapper;
 
 import java.io.DataInputStream;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.Observable;
 
-public class MessageReceiver implements Runnable {
+public class MessageReceiver extends Observable implements Runnable {
 
     private final int processPort;
 
@@ -23,15 +25,14 @@ public class MessageReceiver implements Runnable {
                 receiveMessage(serverSocket);
                 break;
             }
-        }
-        catch (IOException e) {
+        } catch (IOException e) {
             e.printStackTrace();
         }
     }
 
     private void receiveMessage(ServerSocket serverSocket) throws IOException {
         try (Socket clientSocket = serverSocket.accept();
-        DataInputStream dataInputStream = new DataInputStream(clientSocket.getInputStream());
+             DataInputStream dataInputStream = new DataInputStream(clientSocket.getInputStream());
         ) {
             System.out.println("Getting messages and adding to queue for port " + processPort);
 
@@ -44,15 +45,18 @@ public class MessageReceiver implements Runnable {
                 throw new RuntimeException("Network message has incorrect size: expected = " + messageSize + ", actual = " + readMessageSize);
             }
 
-            CommunicationProtocol.Message message = CommunicationProtocol.Message.parseFrom(byteBuffer);
+            Protocol.Message message = Protocol.Message.parseFrom(byteBuffer);
 
-            if (message.getType() != CommunicationProtocol.Message.Type.NETWORK_MESSAGE) {
-                throw new RuntimeException("Network message has incorrect type: expected = " + CommunicationProtocol.Message.Type.NETWORK_MESSAGE + ", actual = " + message.getType());
+            if (!Protocol.Message.Type.NETWORK_MESSAGE.equals(message.getType())) {
+                throw new RuntimeException("Network message has incorrect type: expected = " + Protocol.Message.Type.NETWORK_MESSAGE + ", actual = " + message.getType());
             }
 
-            CommunicationProtocol.NetworkMessage networkMessage = message.getNetworkMessage();
+            Protocol.NetworkMessage networkMessage = message.getNetworkMessage();
+            Protocol.Message innerMessage = networkMessage.getMessage();
 
-            CommunicationProtocol.Message innerMessage = networkMessage.getMessage();
+            IncomingMessageWrapper messageWrapper = new IncomingMessageWrapper(innerMessage, networkMessage.getSenderListeningPort(), message.getToAbstractionId());
+            setChanged();
+            notifyObservers(messageWrapper);
         }
     }
 }

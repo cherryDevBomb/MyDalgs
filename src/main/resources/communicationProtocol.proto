@@ -1,7 +1,7 @@
 syntax = "proto3";
 package amcds; // You can change the package name to anything you like
 option java_package = "com.ubbcluj.amcds.myDalgs.communication";
-option java_outer_classname = "CommunicationProtocol";
+option java_outer_classname = "Protocol";
 
 /*
 app   Custom-made application
