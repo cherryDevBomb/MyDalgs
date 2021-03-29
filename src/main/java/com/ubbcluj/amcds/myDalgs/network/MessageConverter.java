@@ -5,11 +5,15 @@ import com.ubbcluj.amcds.myDalgs.communication.Protocol;
 public class MessageConverter {
 
     public static Protocol.Message createPlDeliverMessage(Protocol.Message message, Protocol.ProcessId sender, String toAbstractionId) {
-        Protocol.PlDeliver plDeliverMessage = Protocol.PlDeliver
+        Protocol.PlDeliver.Builder plDeliverBuilder = Protocol.PlDeliver
                 .newBuilder()
-                .setMessage(message)
-                .setSender(sender)
-                .build();
+                .setMessage(message);
+
+        if (sender != null) {
+            plDeliverBuilder.setSender(sender);
+        }
+
+        Protocol.PlDeliver plDeliverMessage = plDeliverBuilder.build();
 
         Protocol.Message outerMessage = Protocol.Message
                 .newBuilder()

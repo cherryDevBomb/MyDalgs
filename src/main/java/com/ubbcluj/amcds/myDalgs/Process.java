@@ -1,12 +1,14 @@
 package com.ubbcluj.amcds.myDalgs;
 
+import com.ubbcluj.amcds.myDalgs.algorithms.Abstraction;
+import com.ubbcluj.amcds.myDalgs.algorithms.PerfectLink;
 import com.ubbcluj.amcds.myDalgs.communication.Protocol;
 import com.ubbcluj.amcds.myDalgs.globals.HubInfo;
 import com.ubbcluj.amcds.myDalgs.globals.ProcessConstants;
 import com.ubbcluj.amcds.myDalgs.network.MessageConverter;
 import com.ubbcluj.amcds.myDalgs.network.MessageReceiver;
 import com.ubbcluj.amcds.myDalgs.network.MessageSender;
-import com.ubbcluj.amcds.myDalgs.util.IncomingMessageWrapper;
+import com.ubbcluj.amcds.myDalgs.util.IncomingNetworkMessageWrapper;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -18,36 +20,34 @@ public class Process implements Runnable, Observer {
 
     private final Queue<Protocol.Message> messageQueue;
     private Map<Integer, Protocol.ProcessId> processes;
-    //    private final List<Algorithm> algorithms;
+    private final List<Abstraction> abstractions;
 
     public Process(Protocol.ProcessId process) {
         this.process = process;
         this.messageQueue = new ConcurrentLinkedQueue<>();
+        this.abstractions = getAbstractions();
+    }
+
+    private List<Abstraction> getAbstractions() {
+        return Arrays.asList(new PerfectLink());
     }
 
     @Override
     public void run() {
         System.out.println("Running process " + process.getOwner() + "-" + process.getIndex());
 
-        // add app to algorithms? / init algorithms
-
         // start event loop
         Runnable eventLoop = () -> {
             while (true) {
-                System.out.println("Running event loop in " + process.getIndex());
-                break;
-//                messageQueue.forEach(message -> {
-//                    algorithms.forEach(algorithm -> {
-//                        try {
-//                            if (algorithm.handle(message)) {
-//                                logMessageInfo(message, algorithm);
-//                                messageQueue.remove(message);
-//                            }
-//                        } catch (IOException e) {
-//                            e.printStackTrace();
-//                        }
-//                    });
-//                });
+                messageQueue.forEach(message -> {
+                    abstractions.forEach(abstraction -> {
+                        if (abstraction.canHandle(message)) {
+                            System.out.println("Handled " + message.getType());
+                            abstraction.handle(message);
+                            messageQueue.remove(message);
+                        }
+                    });
+                });
             }
         };
         Thread eventLoopThread = new Thread(eventLoop);
@@ -88,17 +88,19 @@ public class Process implements Runnable, Observer {
     }
 
     /**
-     * This method handles an incoming NetworkMessage.
-     * If message is of type PROC_INITIALIZE_SYSTEM, it is handled by the process. Otherwise, the message is added to the queue.
-     * Triggered by calling the notifyObservers() method from the MessageReceiver after a message is received.
+     * This method handles an incoming Message.
+     * Triggered by calling the notifyObservers() method from the MessageReceiver or from an abstraction handler.
+     * If message is of type PROC_INITIALIZE_SYSTEM, it is handled by the process.
+     * If message is another type of message coming from the network, a PlDeliver message is created and added to the queue.
+     * Otherwise, the message is directly added to the queue.
      *
-     * @param o   MessageReceiver
-     * @param arg Protocol.Message
+     * @param o   source of the message
+     * @param arg incoming message
      */
     @Override
     public void update(Observable o, Object arg) {
-        if (arg instanceof IncomingMessageWrapper) {
-            IncomingMessageWrapper messageWrapper = (IncomingMessageWrapper) arg;
+        if (arg instanceof IncomingNetworkMessageWrapper) {
+            IncomingNetworkMessageWrapper messageWrapper = (IncomingNetworkMessageWrapper) arg;
             Protocol.Message innerMessage = messageWrapper.getMessage();
             if (Protocol.Message.Type.PROC_INITIALIZE_SYSTEM.equals(innerMessage.getType())) {
                 handleProcInitializeSystem(innerMessage);
@@ -107,6 +109,9 @@ public class Process implements Runnable, Observer {
                 Protocol.Message convertedMessage = MessageConverter.createPlDeliverMessage(innerMessage, sender, messageWrapper.getToAbstractionId());
                 messageQueue.add(convertedMessage);
             }
+        } else if (arg instanceof Protocol.Message) {
+            Protocol.Message message = (Protocol.Message) arg;
+            messageQueue.add(message);
         }
     }
 
