@@ -37,6 +37,10 @@ public class Process implements Runnable, Observer {
                 .findFirst();
     }
 
+    public List<Protocol.ProcessId> getProcesses() {
+        return processes;
+    }
+
     @Override
     public void run() {
         System.out.println("Running process " + process.getOwner() + "-" + process.getIndex());

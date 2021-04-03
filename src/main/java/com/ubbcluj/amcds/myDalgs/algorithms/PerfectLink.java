@@ -60,12 +60,14 @@ public class PerfectLink extends Abstraction {
 
         Protocol.PlDeliver plDeliver = plDeliverBuilder.build();
 
-        Protocol.Message plDeliverMessage = Protocol.Message
+        Protocol.Message message = Protocol.Message
                 .newBuilder()
                 .setType(Protocol.Message.Type.PL_DELIVER)
                 .setPlDeliver(plDeliver)
                 .setToAbstractionId(toAbstractionId)
 //                .setSystemId() //TODO needed?
                 .build();
+
+        process.addMessageToQueue(message);
     }
 }
