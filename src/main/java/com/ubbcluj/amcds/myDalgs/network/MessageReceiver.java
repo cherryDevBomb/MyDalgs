@@ -1,7 +1,6 @@
 package com.ubbcluj.amcds.myDalgs.network;
 
 import com.ubbcluj.amcds.myDalgs.communication.Protocol;
-import com.ubbcluj.amcds.myDalgs.util.IncomingNetworkMessageWrapper;
 
 import java.io.DataInputStream;
 import java.io.IOException;
@@ -50,12 +49,8 @@ public class MessageReceiver extends Observable implements Runnable {
                 throw new RuntimeException("Network message has incorrect type: expected = " + Protocol.Message.Type.NETWORK_MESSAGE + ", actual = " + message.getType());
             }
 
-            Protocol.NetworkMessage networkMessage = message.getNetworkMessage();
-            Protocol.Message innerMessage = networkMessage.getMessage();
-
-            IncomingNetworkMessageWrapper messageWrapper = new IncomingNetworkMessageWrapper(innerMessage, networkMessage.getSenderListeningPort(), message.getToAbstractionId());
             setChanged();
-            notifyObservers(messageWrapper);
+            notifyObservers(message);
         }
     }
 }

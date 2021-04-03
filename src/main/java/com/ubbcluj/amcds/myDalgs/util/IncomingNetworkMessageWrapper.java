@@ -8,6 +8,7 @@ public class IncomingNetworkMessageWrapper {
     private final int senderPort;
     private final String toAbstractionId;
 
+    //TODO remove if not needed
     public IncomingNetworkMessageWrapper(Protocol.Message message, int senderPort, String toAbstractionId) {
         this.message = message;
         this.senderPort = senderPort;

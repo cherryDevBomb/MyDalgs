@@ -1,52 +1,63 @@
 package com.ubbcluj.amcds.myDalgs;
 
 import com.ubbcluj.amcds.myDalgs.algorithms.Abstraction;
-import com.ubbcluj.amcds.myDalgs.algorithms.PerfectLink;
+import com.ubbcluj.amcds.myDalgs.algorithms.Application;
 import com.ubbcluj.amcds.myDalgs.communication.Protocol;
+import com.ubbcluj.amcds.myDalgs.globals.AbstractionType;
 import com.ubbcluj.amcds.myDalgs.globals.HubInfo;
 import com.ubbcluj.amcds.myDalgs.globals.ProcessConstants;
-import com.ubbcluj.amcds.myDalgs.network.MessageConverter;
 import com.ubbcluj.amcds.myDalgs.network.MessageReceiver;
 import com.ubbcluj.amcds.myDalgs.network.MessageSender;
-import com.ubbcluj.amcds.myDalgs.util.IncomingNetworkMessageWrapper;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.stream.Collectors;
 
 public class Process implements Runnable, Observer {
 
     private Protocol.ProcessId process;
 
     private final Queue<Protocol.Message> messageQueue;
-    private Map<Integer, Protocol.ProcessId> processes;
-    private final List<Abstraction> abstractions;
+    private List<Protocol.ProcessId> processes;
+    private final Map<String, Abstraction> abstractions;
 
     public Process(Protocol.ProcessId process) {
         this.process = process;
         this.messageQueue = new ConcurrentLinkedQueue<>();
-        this.abstractions = getAbstractions();
+        this.abstractions = new ConcurrentHashMap<>();
     }
 
-    private List<Abstraction> getAbstractions() {
-        return Arrays.asList(new PerfectLink());
+    public Protocol.ProcessId getProcess() {
+        return process;
+    }
+
+    public Optional<Protocol.ProcessId> getProcessByHostAndPort(String host, int port) {
+        return processes.stream()
+                .filter(p -> host.equals(p.getHost()) && p.getPort() == port)
+                .findFirst();
     }
 
     @Override
     public void run() {
         System.out.println("Running process " + process.getOwner() + "-" + process.getIndex());
 
+        //register abstractions
+//        registerAbstraction(new PerfectLink(AbstractionType.PL.getId(), this)); //TODO is this needed?
+//        registerAbstraction(new BestEffortBroadcast(AbstractionType.BEB.getId(), this)); //TODO is this needed?
+        registerAbstraction(new Application(AbstractionType.APP.getId(), this));
+
         // start event loop
         Runnable eventLoop = () -> {
             while (true) {
                 messageQueue.forEach(message -> {
-                    abstractions.forEach(abstraction -> {
-                        if (abstraction.canHandle(message)) {
-                            System.out.println("Handled " + message.getType());
-                            abstraction.handle(message);
-                            messageQueue.remove(message);
-                        }
-                    });
+                    System.out.println("FromAbstractionId: " + message.getFromAbstractionId() + "ToAbstractionId: " + message.getToAbstractionId());
+                    if (!abstractions.containsKey(message.getToAbstractionId())) {
+                        //TODO register additional abstraction handlers - for nnar & uc
+                    }
+                    if (abstractions.get(message.getToAbstractionId()).handle(message)) {
+                        System.out.println("Handled " + message.getType());
+                        messageQueue.remove(message);
+                    }
                 });
             }
         };
@@ -68,6 +79,14 @@ public class Process implements Runnable, Observer {
         }
     }
 
+    public void registerAbstraction(Abstraction abstraction) {
+        abstractions.put(abstraction.getAbstractionId(), abstraction);
+    }
+
+    public void addMessageToQueue(Protocol.Message message) {
+        messageQueue.add(message);
+    }
+
     private void register() {
         Protocol.ProcRegistration procRegistration = Protocol.ProcRegistration
                 .newBuilder()
@@ -75,16 +94,32 @@ public class Process implements Runnable, Observer {
                 .setIndex(process.getIndex())
                 .build();
 
-        Protocol.Message message = Protocol.Message
+        Protocol.Message procRegistrationMessage = Protocol.Message
                 .newBuilder()
                 .setType(Protocol.Message.Type.PROC_REGISTRATION)
                 .setProcRegistration(procRegistration)
                 .setMessageUuid(UUID.randomUUID().toString())
-                .setToAbstractionId("app")
+                .setToAbstractionId(AbstractionType.APP.getId())
                 .setSystemId(ProcessConstants.SYSTEM_ID)
                 .build();
 
-        MessageSender.send(message, process, HubInfo.HOST, HubInfo.PORT);
+        Protocol.NetworkMessage networkMessage = Protocol.NetworkMessage
+                .newBuilder()
+                .setSenderHost(process.getHost())
+                .setSenderListeningPort(process.getPort())
+                .setMessage(procRegistrationMessage)
+                .build();
+
+        Protocol.Message outerMessage = Protocol.Message
+                .newBuilder()
+                .setType(Protocol.Message.Type.NETWORK_MESSAGE)
+                .setNetworkMessage(networkMessage)
+                .setToAbstractionId(procRegistrationMessage.getToAbstractionId())
+//                .setSystemId(ProcessConstants.SYSTEM_ID)
+                .setMessageUuid(UUID.randomUUID().toString())
+                .build();
+
+        MessageSender.send(outerMessage, HubInfo.HOST, HubInfo.PORT);
     }
 
     /**
@@ -99,26 +134,19 @@ public class Process implements Runnable, Observer {
      */
     @Override
     public void update(Observable o, Object arg) {
-        if (arg instanceof IncomingNetworkMessageWrapper) {
-            IncomingNetworkMessageWrapper messageWrapper = (IncomingNetworkMessageWrapper) arg;
-            Protocol.Message innerMessage = messageWrapper.getMessage();
+        if (arg instanceof Protocol.Message) {
+            Protocol.Message message = (Protocol.Message) arg;
+            Protocol.Message innerMessage = message.getNetworkMessage().getMessage();
             if (Protocol.Message.Type.PROC_INITIALIZE_SYSTEM.equals(innerMessage.getType())) {
                 handleProcInitializeSystem(innerMessage);
             } else {
-                Protocol.ProcessId sender = processes.get(messageWrapper.getSenderPort());
-                Protocol.Message convertedMessage = MessageConverter.createPlDeliverMessage(innerMessage, sender, messageWrapper.getToAbstractionId());
-                messageQueue.add(convertedMessage);
+                messageQueue.add(message);
             }
-        } else if (arg instanceof Protocol.Message) {
-            Protocol.Message message = (Protocol.Message) arg;
-            messageQueue.add(message);
         }
     }
 
     private void handleProcInitializeSystem(Protocol.Message message) {
         Protocol.ProcInitializeSystem procInitializeSystem = message.getProcInitializeSystem();
-        this.processes = procInitializeSystem.getProcessesList()
-                .stream()
-                .collect(Collectors.toMap(Protocol.ProcessId::getPort, processId -> processId));
+        this.processes = procInitializeSystem.getProcessesList();
     }
 }
