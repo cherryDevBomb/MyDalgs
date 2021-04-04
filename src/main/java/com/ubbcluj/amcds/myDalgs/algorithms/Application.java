@@ -16,22 +16,25 @@ public class Application extends Abstraction {
 
     @Override
     public boolean handle(Protocol.Message message) {
-        Protocol.Message innerMessage;
         if (Protocol.Message.Type.PL_DELIVER.equals(message.getType())) {
-            innerMessage = message.getPlDeliver().getMessage();
-        } else {
-            return false;
+            message = message.getPlDeliver().getMessage();
         }
 
-        switch (innerMessage.getType()) {
+        switch (message.getType()) {
             case APP_BROADCAST:
-                handleAppBroadcast(innerMessage.getAppBroadcast());
+                handleAppBroadcast(message.getAppBroadcast(), message.getSystemId());
                 return true;
+            case BEB_DELIVER:
+                Protocol.Message innerMessage = message.getBebDeliver().getMessage();
+                if (Protocol.Message.Type.APP_VALUE.equals(innerMessage.getType())) {
+                    handleBebDeliver(innerMessage);
+                    return true;
+                }
         }
         return false;
     }
 
-    private void handleAppBroadcast(Protocol.AppBroadcast appBroadcast) {
+    private void handleAppBroadcast(Protocol.AppBroadcast appBroadcast, String systemId) {
         Protocol.AppValue appValue = Protocol.AppValue
                 .newBuilder()
                 .setValue(appBroadcast.getValue())
@@ -41,6 +44,9 @@ public class Application extends Abstraction {
                 .newBuilder()
                 .setType(Protocol.Message.Type.APP_VALUE)
                 .setAppValue(appValue)
+                .setFromAbstractionId(this.abstractionId)
+                .setToAbstractionId(this.abstractionId)
+                .setSystemId(systemId)
                 .build();
 
         Protocol.BebBroadcast bebBroadcast = Protocol.BebBroadcast
@@ -54,8 +60,29 @@ public class Application extends Abstraction {
                 .setBebBroadcast(bebBroadcast)
                 .setFromAbstractionId(this.abstractionId)
                 .setToAbstractionId(AbstractionIdUtil.getChildAbstractionId(this.abstractionId, AbstractionType.BEB))
+                .setSystemId(systemId)
                 .build();
 
         process.addMessageToQueue(bebBroadcastMessage);
+    }
+
+
+    private void handleBebDeliver(Protocol.Message appValueMessage) {
+        Protocol.PlSend plSend = Protocol.PlSend
+                .newBuilder()
+                .setDestination(process.getHub())
+                .setMessage(appValueMessage)
+                .build();
+
+        Protocol.Message plSendMessage = Protocol.Message
+                .newBuilder()
+                .setType(Protocol.Message.Type.PL_SEND)
+                .setPlSend(plSend)
+                .setFromAbstractionId(this.abstractionId)
+                .setToAbstractionId(AbstractionIdUtil.getChildAbstractionId(this.abstractionId, AbstractionType.PL))
+                .setSystemId(appValueMessage.getSystemId())
+                .build();
+
+        process.addMessageToQueue(plSendMessage);
     }
 }

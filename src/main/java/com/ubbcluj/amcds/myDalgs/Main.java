@@ -1,7 +1,6 @@
 package com.ubbcluj.amcds.myDalgs;
 
 import com.ubbcluj.amcds.myDalgs.communication.Protocol;
-import com.ubbcluj.amcds.myDalgs.globals.HubInfo;
 
 import java.util.Arrays;
 import java.util.List;
@@ -13,7 +12,12 @@ public class Main {
 
         String hubHost = args[0];
         int hubPort = Integer.parseInt(args[1]);
-        HubInfo.initHub(hubHost, hubPort);
+        Protocol.ProcessId hubInfo = Protocol.ProcessId
+                .newBuilder()
+                .setHost(hubHost)
+                .setPort(hubPort)
+                .setOwner("hub")
+                .build();
 
         final String processHost = args[2];
         final List<Integer> processPorts = Arrays.asList(Integer.parseInt(args[3]), Integer.parseInt(args[4]), Integer.parseInt(args[5]));
@@ -28,9 +32,9 @@ public class Main {
                         .build())
                 .collect(Collectors.toList());
 
-        Thread process1 = new Thread(new Process(processIds.get(0)));
-        Thread process2 = new Thread(new Process(processIds.get(1)));
-        Thread process3 = new Thread(new Process(processIds.get(2)));
+        Thread process1 = new Thread(new Process(processIds.get(0), hubInfo));
+        Thread process2 = new Thread(new Process(processIds.get(1), hubInfo));
+        Thread process3 = new Thread(new Process(processIds.get(2), hubInfo));
 
         process1.start();
         process2.start();

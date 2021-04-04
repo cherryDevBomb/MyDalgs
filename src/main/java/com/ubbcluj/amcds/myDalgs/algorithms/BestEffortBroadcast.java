@@ -3,7 +3,6 @@ package com.ubbcluj.amcds.myDalgs.algorithms;
 import com.ubbcluj.amcds.myDalgs.Process;
 import com.ubbcluj.amcds.myDalgs.communication.Protocol;
 import com.ubbcluj.amcds.myDalgs.globals.AbstractionType;
-import com.ubbcluj.amcds.myDalgs.network.MessageSender;
 import com.ubbcluj.amcds.myDalgs.util.AbstractionIdUtil;
 
 public class BestEffortBroadcast extends Abstraction {
@@ -17,13 +16,18 @@ public class BestEffortBroadcast extends Abstraction {
     public boolean handle(Protocol.Message message) {
         switch (message.getType()) {
             case BEB_BROADCAST:
-                handleBebBroadcast(message.getBebBroadcast());
+                handleBebBroadcast(message.getBebBroadcast(), message.getSystemId());
                 return true;
+            case PL_DELIVER:
+                if (Protocol.Message.Type.APP_VALUE.equals(message.getPlDeliver().getMessage().getType())) {
+                    triggerBebDeliver(message.getPlDeliver().getMessage());
+                    return true;
+                }
         }
         return false;
     }
 
-    private void handleBebBroadcast(Protocol.BebBroadcast bebBroadcast) {
+    private void handleBebBroadcast(Protocol.BebBroadcast bebBroadcast, String systemId) {
         process.getProcesses().forEach(p -> {
             Protocol.PlSend plSend = Protocol.PlSend
                     .newBuilder()
@@ -37,9 +41,29 @@ public class BestEffortBroadcast extends Abstraction {
                     .setPlSend(plSend)
                     .setFromAbstractionId(this.abstractionId)
                     .setToAbstractionId(AbstractionIdUtil.getChildAbstractionId(this.abstractionId, AbstractionType.PL))
+                    .setSystemId(systemId)
                     .build();
 
             process.addMessageToQueue(plSendMessage);
         });
+    }
+
+    private void triggerBebDeliver(Protocol.Message appValueMessage) {
+        Protocol.BebDeliver bebDeliver = Protocol.BebDeliver
+                .newBuilder()
+                .setMessage(appValueMessage)
+                .setSender(process.getProcess())
+                .build();
+
+        Protocol.Message bebDeliverMessage = Protocol.Message
+                .newBuilder()
+                .setType(Protocol.Message.Type.BEB_DELIVER)
+                .setBebDeliver(bebDeliver)
+                .setFromAbstractionId(this.abstractionId)
+                .setToAbstractionId(AbstractionIdUtil.getParentAbstractionId(this.abstractionId))
+                .setSystemId(appValueMessage.getSystemId())
+                .build();
+
+        process.addMessageToQueue(bebDeliverMessage);
     }
 }

@@ -17,7 +17,7 @@ public class PerfectLink extends Abstraction {
     public boolean handle(Protocol.Message message) {
         switch (message.getType()) {
             case PL_SEND:
-                handlePlSend(message.getPlSend(), message.getToAbstractionId());
+                handlePlSend(message.getPlSend(), message.getToAbstractionId(), message.getSystemId());
                 return true;
             case NETWORK_MESSAGE:
                 triggerPlDeliver(message.getNetworkMessage(), AbstractionIdUtil.getParentAbstractionId(message.getToAbstractionId()));
@@ -26,7 +26,7 @@ public class PerfectLink extends Abstraction {
         return false;
     }
 
-    private void handlePlSend(Protocol.PlSend plSendMessage, String toAbstractionId) {
+    private void handlePlSend(Protocol.PlSend plSendMessage, String toAbstractionId, String systemId) {
         Protocol.ProcessId sender = process.getProcess();
         Protocol.ProcessId destination = plSendMessage.getDestination();
 
@@ -43,7 +43,7 @@ public class PerfectLink extends Abstraction {
                 .setNetworkMessage(networkMessage)
                 .setFromAbstractionId(this.abstractionId)
                 .setToAbstractionId(toAbstractionId)
-//                .setSystemId(ProcessConstants.SYSTEM_ID)
+                .setSystemId(systemId)
                 .setMessageUuid(UUID.randomUUID().toString())
                 .build();
 
@@ -65,7 +65,7 @@ public class PerfectLink extends Abstraction {
                 .setType(Protocol.Message.Type.PL_DELIVER)
                 .setPlDeliver(plDeliver)
                 .setToAbstractionId(toAbstractionId)
-//                .setSystemId() //TODO needed?
+                .setSystemId(networkMessage.getMessage().getSystemId())
                 .build();
 
         process.addMessageToQueue(message);

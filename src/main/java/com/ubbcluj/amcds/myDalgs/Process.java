@@ -4,8 +4,6 @@ import com.ubbcluj.amcds.myDalgs.algorithms.Abstraction;
 import com.ubbcluj.amcds.myDalgs.algorithms.Application;
 import com.ubbcluj.amcds.myDalgs.communication.Protocol;
 import com.ubbcluj.amcds.myDalgs.globals.AbstractionType;
-import com.ubbcluj.amcds.myDalgs.globals.HubInfo;
-import com.ubbcluj.amcds.myDalgs.globals.ProcessConstants;
 import com.ubbcluj.amcds.myDalgs.network.MessageReceiver;
 import com.ubbcluj.amcds.myDalgs.network.MessageSender;
 
@@ -17,12 +15,14 @@ public class Process implements Runnable, Observer {
 
     private Protocol.ProcessId process;
 
-    private final Queue<Protocol.Message> messageQueue;
+    private Protocol.ProcessId hub;
     private List<Protocol.ProcessId> processes;
+    private final Queue<Protocol.Message> messageQueue;
     private final Map<String, Abstraction> abstractions;
 
-    public Process(Protocol.ProcessId process) {
+    public Process(Protocol.ProcessId process, Protocol.ProcessId hub) {
         this.process = process;
+        this.hub = hub;
         this.messageQueue = new ConcurrentLinkedQueue<>();
         this.abstractions = new ConcurrentHashMap<>();
     }
@@ -31,14 +31,18 @@ public class Process implements Runnable, Observer {
         return process;
     }
 
-    public Optional<Protocol.ProcessId> getProcessByHostAndPort(String host, int port) {
-        return processes.stream()
-                .filter(p -> host.equals(p.getHost()) && p.getPort() == port)
-                .findFirst();
+    public Protocol.ProcessId getHub() {
+        return hub;
     }
 
     public List<Protocol.ProcessId> getProcesses() {
         return processes;
+    }
+
+    public Optional<Protocol.ProcessId> getProcessByHostAndPort(String host, int port) {
+        return processes.stream()
+                .filter(p -> host.equals(p.getHost()) && p.getPort() == port)
+                .findFirst();
     }
 
     @Override
@@ -104,7 +108,7 @@ public class Process implements Runnable, Observer {
                 .setProcRegistration(procRegistration)
                 .setMessageUuid(UUID.randomUUID().toString())
                 .setToAbstractionId(AbstractionType.APP.getId())
-                .setSystemId(ProcessConstants.SYSTEM_ID)
+//                .setSystemId(ProcessConstants.SYSTEM_ID)
                 .build();
 
         Protocol.NetworkMessage networkMessage = Protocol.NetworkMessage
@@ -123,7 +127,7 @@ public class Process implements Runnable, Observer {
                 .setMessageUuid(UUID.randomUUID().toString())
                 .build();
 
-        MessageSender.send(outerMessage, HubInfo.HOST, HubInfo.PORT);
+        MessageSender.send(outerMessage, hub.getHost(), hub.getPort());
     }
 
     /**
