@@ -2,6 +2,7 @@ package com.ubbcluj.amcds.myDalgs;
 
 import com.ubbcluj.amcds.myDalgs.algorithms.Abstraction;
 import com.ubbcluj.amcds.myDalgs.algorithms.Application;
+import com.ubbcluj.amcds.myDalgs.algorithms.NNAtomicRegister;
 import com.ubbcluj.amcds.myDalgs.communication.Protocol;
 import com.ubbcluj.amcds.myDalgs.globals.AbstractionType;
 import com.ubbcluj.amcds.myDalgs.network.MessageReceiver;
@@ -27,24 +28,6 @@ public class Process implements Runnable, Observer {
         this.abstractions = new ConcurrentHashMap<>();
     }
 
-    public Protocol.ProcessId getProcess() {
-        return process;
-    }
-
-    public Protocol.ProcessId getHub() {
-        return hub;
-    }
-
-    public List<Protocol.ProcessId> getProcesses() {
-        return processes;
-    }
-
-    public Optional<Protocol.ProcessId> getProcessByHostAndPort(String host, int port) {
-        return processes.stream()
-                .filter(p -> host.equals(p.getHost()) && p.getPort() == port)
-                .findFirst();
-    }
-
     @Override
     public void run() {
         System.out.println("Running process " + process.getOwner() + "-" + process.getIndex());
@@ -58,9 +41,12 @@ public class Process implements Runnable, Observer {
         Runnable eventLoop = () -> {
             while (true) {
                 messageQueue.forEach(message -> {
-                    System.out.println("FromAbstractionId: " + message.getFromAbstractionId() + "ToAbstractionId: " + message.getToAbstractionId());
+                    System.out.println("FromAbstractionId: " + message.getFromAbstractionId() + "; ToAbstractionId: " + message.getToAbstractionId());
                     if (!abstractions.containsKey(message.getToAbstractionId())) {
-                        //TODO register additional abstraction handlers - for nnar & uc
+//                        //TODO register additional abstraction handlers - for nnar & uc
+//                        if (message.getToAbstractionId().contains(AbstractionType.NNAR.getId())) {
+//                            registerAbstraction(new NNAtomicRegister(message.getToAbstractionId(), this));
+//                        }
                     }
                     if (abstractions.get(message.getToAbstractionId()).handle(message)) {
                         System.out.println("Handled " + message.getType());
@@ -88,7 +74,7 @@ public class Process implements Runnable, Observer {
     }
 
     public void registerAbstraction(Abstraction abstraction) {
-        abstractions.put(abstraction.getAbstractionId(), abstraction);
+        abstractions.putIfAbsent(abstraction.getAbstractionId(), abstraction);
     }
 
     public void addMessageToQueue(Protocol.Message message) {
@@ -108,7 +94,6 @@ public class Process implements Runnable, Observer {
                 .setProcRegistration(procRegistration)
                 .setMessageUuid(UUID.randomUUID().toString())
                 .setToAbstractionId(AbstractionType.APP.getId())
-//                .setSystemId(ProcessConstants.SYSTEM_ID)
                 .build();
 
         Protocol.NetworkMessage networkMessage = Protocol.NetworkMessage
@@ -123,7 +108,6 @@ public class Process implements Runnable, Observer {
                 .setType(Protocol.Message.Type.NETWORK_MESSAGE)
                 .setNetworkMessage(networkMessage)
                 .setToAbstractionId(procRegistrationMessage.getToAbstractionId())
-//                .setSystemId(ProcessConstants.SYSTEM_ID)
                 .setMessageUuid(UUID.randomUUID().toString())
                 .build();
 
@@ -156,5 +140,23 @@ public class Process implements Runnable, Observer {
     private void handleProcInitializeSystem(Protocol.Message message) {
         Protocol.ProcInitializeSystem procInitializeSystem = message.getProcInitializeSystem();
         this.processes = procInitializeSystem.getProcessesList();
+    }
+
+    public Optional<Protocol.ProcessId> getProcessByHostAndPort(String host, int port) {
+        return processes.stream()
+                .filter(p -> host.equals(p.getHost()) && p.getPort() == port)
+                .findFirst();
+    }
+
+    public Protocol.ProcessId getProcess() {
+        return process;
+    }
+
+    public Protocol.ProcessId getHub() {
+        return hub;
+    }
+
+    public List<Protocol.ProcessId> getProcesses() {
+        return processes;
     }
 }

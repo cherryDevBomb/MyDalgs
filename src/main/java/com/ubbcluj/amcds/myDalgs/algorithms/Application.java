@@ -11,7 +11,6 @@ public class Application extends Abstraction {
         super(abstractionId, process);
         process.registerAbstraction(new BestEffortBroadcast(AbstractionIdUtil.getChildAbstractionId(abstractionId, AbstractionType.BEB), process));
         process.registerAbstraction(new PerfectLink(AbstractionIdUtil.getChildAbstractionId(abstractionId, AbstractionType.PL), process));
-
     }
 
     @Override
@@ -30,6 +29,9 @@ public class Application extends Abstraction {
                     handleBebDeliver(innerMessage);
                     return true;
                 }
+            case APP_WRITE:
+                handleAppWrite(message.getAppWrite(), message.getSystemId());
+                return true;
         }
         return false;
     }
@@ -84,5 +86,28 @@ public class Application extends Abstraction {
                 .build();
 
         process.addMessageToQueue(plSendMessage);
+    }
+
+
+    private void handleAppWrite(Protocol.AppWrite appWrite, String systemId) {
+        // register app.nnar[register] abstraction if not present
+        String nnarAbstractionId = AbstractionIdUtil.getNamedAbstractionId(this.abstractionId, AbstractionType.NNAR, appWrite.getRegister());
+        process.registerAbstraction(new NNAtomicRegister(nnarAbstractionId, process));
+
+        Protocol.NnarWrite nnarWrite = Protocol.NnarWrite
+                .newBuilder()
+                .setValue(appWrite.getValue())
+                .build();
+
+        Protocol.Message nnarWriteMessage = Protocol.Message
+                .newBuilder()
+                .setType(Protocol.Message.Type.NNAR_WRITE)
+                .setNnarWrite(nnarWrite)
+                .setFromAbstractionId(this.abstractionId)
+                .setToAbstractionId(nnarAbstractionId)
+                .setSystemId(systemId)
+                .build();
+
+        process.addMessageToQueue(nnarWriteMessage);
     }
 }

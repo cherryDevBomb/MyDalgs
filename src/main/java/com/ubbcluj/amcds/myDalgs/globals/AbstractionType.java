@@ -3,9 +3,10 @@ package com.ubbcluj.amcds.myDalgs.globals;
 public enum AbstractionType {
     PL("pl"),
     BEB("beb"),
-    APP("app");
+    APP("app"),
+    NNAR("nnar");
 
-    private String id;
+    private final String id;
 
     private AbstractionType(String id) {
         this.id = id;

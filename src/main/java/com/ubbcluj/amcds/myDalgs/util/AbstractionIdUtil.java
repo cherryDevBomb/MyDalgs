@@ -11,4 +11,8 @@ public class AbstractionIdUtil {
     public static String getParentAbstractionId(String childAbstractionId) {
         return childAbstractionId.substring(0, childAbstractionId.lastIndexOf("."));
     }
+
+    public static String getNamedAbstractionId(String parentAbstractionId, AbstractionType abstractionType, String name) {
+        return getChildAbstractionId(parentAbstractionId, abstractionType) + "[" + name + "]";
+    }
 }
