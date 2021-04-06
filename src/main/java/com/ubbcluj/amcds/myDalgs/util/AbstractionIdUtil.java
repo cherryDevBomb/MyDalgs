@@ -1,6 +1,6 @@
 package com.ubbcluj.amcds.myDalgs.util;
 
-import com.ubbcluj.amcds.myDalgs.globals.AbstractionType;
+import com.ubbcluj.amcds.myDalgs.model.AbstractionType;
 
 public class AbstractionIdUtil {
 

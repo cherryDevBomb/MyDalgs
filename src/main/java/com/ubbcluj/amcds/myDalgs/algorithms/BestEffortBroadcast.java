@@ -2,7 +2,7 @@ package com.ubbcluj.amcds.myDalgs.algorithms;
 
 import com.ubbcluj.amcds.myDalgs.Process;
 import com.ubbcluj.amcds.myDalgs.communication.Protocol;
-import com.ubbcluj.amcds.myDalgs.globals.AbstractionType;
+import com.ubbcluj.amcds.myDalgs.model.AbstractionType;
 import com.ubbcluj.amcds.myDalgs.util.AbstractionIdUtil;
 
 public class BestEffortBroadcast extends Abstraction {

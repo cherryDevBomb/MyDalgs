@@ -2,7 +2,7 @@ package com.ubbcluj.amcds.myDalgs.algorithms;
 
 import com.ubbcluj.amcds.myDalgs.Process;
 import com.ubbcluj.amcds.myDalgs.communication.Protocol;
-import com.ubbcluj.amcds.myDalgs.globals.AbstractionType;
+import com.ubbcluj.amcds.myDalgs.model.AbstractionType;
 import com.ubbcluj.amcds.myDalgs.util.AbstractionIdUtil;
 
 public class Application extends Abstraction {
@@ -15,6 +15,7 @@ public class Application extends Abstraction {
 
     @Override
     public boolean handle(Protocol.Message message) {
+        // TODO refactor into nested switch
         if (Protocol.Message.Type.PL_DELIVER.equals(message.getType())) {
             message = message.getPlDeliver().getMessage();
         }

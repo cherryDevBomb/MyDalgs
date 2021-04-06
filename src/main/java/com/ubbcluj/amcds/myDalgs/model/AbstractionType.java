@@ -1,4 +1,4 @@
-package com.ubbcluj.amcds.myDalgs.globals;
+package com.ubbcluj.amcds.myDalgs.model;
 
 public enum AbstractionType {
     PL("pl"),

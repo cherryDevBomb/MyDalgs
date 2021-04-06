@@ -2,9 +2,8 @@ package com.ubbcluj.amcds.myDalgs;
 
 import com.ubbcluj.amcds.myDalgs.algorithms.Abstraction;
 import com.ubbcluj.amcds.myDalgs.algorithms.Application;
-import com.ubbcluj.amcds.myDalgs.algorithms.NNAtomicRegister;
 import com.ubbcluj.amcds.myDalgs.communication.Protocol;
-import com.ubbcluj.amcds.myDalgs.globals.AbstractionType;
+import com.ubbcluj.amcds.myDalgs.model.AbstractionType;
 import com.ubbcluj.amcds.myDalgs.network.MessageReceiver;
 import com.ubbcluj.amcds.myDalgs.network.MessageSender;
 
@@ -33,8 +32,6 @@ public class Process implements Runnable, Observer {
         System.out.println("Running process " + process.getOwner() + "-" + process.getIndex());
 
         //register abstractions
-//        registerAbstraction(new PerfectLink(AbstractionType.PL.getId(), this)); //TODO is this needed?
-//        registerAbstraction(new BestEffortBroadcast(AbstractionType.BEB.getId(), this)); //TODO is this needed?
         registerAbstraction(new Application(AbstractionType.APP.getId(), this));
 
         // start event loop
