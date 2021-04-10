@@ -32,8 +32,6 @@ public class MessageReceiver extends Observable implements Runnable {
         try (Socket clientSocket = serverSocket.accept();
              DataInputStream dataInputStream = new DataInputStream(clientSocket.getInputStream());
         ) {
-            System.out.println("Getting messages and adding to queue for port " + processPort);
-
             int messageSize = dataInputStream.readInt();
             byte[] byteBuffer = new byte[messageSize];
             int readMessageSize = dataInputStream.read(byteBuffer, 0, messageSize);

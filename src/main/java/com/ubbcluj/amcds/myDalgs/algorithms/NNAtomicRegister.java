@@ -66,14 +66,14 @@ public class NNAtomicRegister extends Abstraction {
                         Protocol.NnarInternalValue nnarInternalValue = plDeliver.getMessage().getNnarInternalValue();
                         if (nnarInternalValue.getReadId() == this.readId) {
                             NNARValue value = new NNARValue(nnarInternalValue.getTimestamp(), nnarInternalValue.getWriterRank(), nnarInternalValue.getValue());
-                            triggerPlDeliverValue(plDeliver.getSender(), nnarInternalValue.getReadId(), value, plDeliver.getMessage().getSystemId());
+                            triggerPlDeliverValue(plDeliver.getSender(), nnarInternalValue.getReadId(), value, message.getSystemId());
                             return true;
                         }
                         return false;
                     case NNAR_INTERNAL_ACK:
                         Protocol.NnarInternalAck nnarInternalAck = plDeliver.getMessage().getNnarInternalAck();
                         if (nnarInternalAck.getReadId() == this.readId) {
-                            triggerPlDeliverAck(plDeliver.getSender(), nnarInternalAck.getReadId(), plDeliver.getMessage().getSystemId());
+                            triggerPlDeliverAck(plDeliver.getSender(), nnarInternalAck.getReadId(), message.getSystemId());
                             return true;
                         }
                         return false;

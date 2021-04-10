@@ -2,6 +2,7 @@ package com.ubbcluj.amcds.myDalgs;
 
 import com.ubbcluj.amcds.myDalgs.algorithms.Abstraction;
 import com.ubbcluj.amcds.myDalgs.algorithms.Application;
+import com.ubbcluj.amcds.myDalgs.algorithms.NNAtomicRegister;
 import com.ubbcluj.amcds.myDalgs.communication.Protocol;
 import com.ubbcluj.amcds.myDalgs.model.AbstractionType;
 import com.ubbcluj.amcds.myDalgs.network.MessageReceiver;
@@ -38,7 +39,7 @@ public class Process implements Runnable, Observer {
         Runnable eventLoop = () -> {
             while (true) {
                 messageQueue.forEach(message -> {
-                    System.out.println("FromAbstractionId: " + message.getFromAbstractionId() + "; ToAbstractionId: " + message.getToAbstractionId());
+                    System.out.println("Handling " + message.getType() + "; FromAbstractionId: " + message.getFromAbstractionId() + "; ToAbstractionId: " + message.getToAbstractionId());
                     if (!abstractions.containsKey(message.getToAbstractionId())) {
 //                        //TODO register additional abstraction handlers - for nnar & uc
 //                        if (message.getToAbstractionId().contains(AbstractionType.NNAR.getId())) {
@@ -46,7 +47,6 @@ public class Process implements Runnable, Observer {
 //                        }
                     }
                     if (abstractions.get(message.getToAbstractionId()).handle(message)) {
-                        System.out.println("Handled " + message.getType());
                         messageQueue.remove(message);
                     }
                 });

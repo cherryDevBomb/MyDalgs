@@ -15,15 +15,22 @@ public class Application extends Abstraction {
 
     @Override
     public boolean handle(Protocol.Message message) {
-        // TODO refactor into nested switch
-        if (Protocol.Message.Type.PL_DELIVER.equals(message.getType())) {
-            message = message.getPlDeliver().getMessage();
-        }
-
         switch (message.getType()) {
-            case APP_BROADCAST:
-                handleAppBroadcast(message.getAppBroadcast(), message.getSystemId());
-                return true;
+            case PL_DELIVER:
+                Protocol.PlDeliver plDeliver = message.getPlDeliver();
+                switch (plDeliver.getMessage().getType()) {
+                    case APP_BROADCAST:
+                        handleAppBroadcast(plDeliver.getMessage().getAppBroadcast(), plDeliver.getMessage().getSystemId());
+                        return true;
+                    case APP_READ:
+                        handleAppRead(plDeliver.getMessage().getAppRead(), plDeliver.getMessage().getSystemId());
+                        return true;
+                    case APP_WRITE:
+                        handleAppWrite(plDeliver.getMessage().getAppWrite(), plDeliver.getMessage().getSystemId());
+                        return true;
+                }
+                System.out.println("Application cannot handle PL_DELIVER with inner " + plDeliver.getMessage().getType()); //TODO remove when not needed
+                return false;
             case BEB_DELIVER:
                 Protocol.Message innerMessage = message.getBebDeliver().getMessage();
                 if (Protocol.Message.Type.APP_VALUE.equals(innerMessage.getType())) {
@@ -31,9 +38,6 @@ public class Application extends Abstraction {
                     return true;
                 }
                 System.out.println("WARN: beb deliver not app_value");
-            case APP_WRITE:
-                handleAppWrite(message.getAppWrite(), message.getSystemId());
-                return true;
             case NNAR_READ_RETURN:
                 handleNnarReadReturn(message.getNnarReadReturn(), message.getFromAbstractionId(), message.getSystemId());
                 return true;
@@ -41,6 +45,7 @@ public class Application extends Abstraction {
                 handleNnarWriteReturn(message.getNnarWriteReturn(), message.getFromAbstractionId(), message.getSystemId());
                 return true;
         }
+        System.out.println(message.getType());
         return false;
     }
 
@@ -74,6 +79,26 @@ public class Application extends Abstraction {
                 .build();
 
         process.addMessageToQueue(bebBroadcastMessage);
+    }
+
+    private void handleAppRead(Protocol.AppRead appRead, String systemId) {
+        String nnarAbstractionId = AbstractionIdUtil.getNamedAbstractionId(this.abstractionId, AbstractionType.NNAR, appRead.getRegister());
+        process.registerAbstraction(new NNAtomicRegister(nnarAbstractionId, process));
+
+        Protocol.NnarRead nnarRead = Protocol.NnarRead
+                .newBuilder()
+                .build();
+
+        Protocol.Message nnarReadMessage = Protocol.Message
+                .newBuilder()
+                .setType(Protocol.Message.Type.NNAR_READ)
+                .setNnarRead(nnarRead)
+                .setFromAbstractionId(this.abstractionId)
+                .setToAbstractionId(nnarAbstractionId)
+                .setSystemId(systemId)
+                .build();
+
+        process.addMessageToQueue(nnarReadMessage);
     }
 
     private void handleAppWrite(Protocol.AppWrite appWrite, String systemId) {
