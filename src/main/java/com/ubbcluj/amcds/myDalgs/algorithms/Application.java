@@ -33,11 +33,10 @@ public class Application extends Abstraction {
                 return false;
             case BEB_DELIVER:
                 Protocol.Message innerMessage = message.getBebDeliver().getMessage();
-                if (Protocol.Message.Type.APP_VALUE.equals(innerMessage.getType())) {
-                    triggerPlSend(innerMessage);
+//                if (Protocol.Message.Type.APP_VALUE.equals(innerMessage.getType())) {
+                    triggerPlSend(innerMessage, message.getSystemId());
                     return true;
-                }
-                System.out.println("WARN: beb deliver not app_value");
+//                }
             case NNAR_READ_RETURN:
                 handleNnarReadReturn(message.getNnarReadReturn(), message.getFromAbstractionId(), message.getSystemId());
                 return true;
@@ -136,11 +135,11 @@ public class Application extends Abstraction {
                 .setType(Protocol.Message.Type.APP_READ_RETURN)
                 .setAppReadReturn(appReadReturn)
                 .setFromAbstractionId(this.abstractionId)
-                .setToAbstractionId(AbstractionIdUtil.HUB_ID)
+//                .setToAbstractionId(AbstractionIdUtil.HUB_ID)
                 .setSystemId(systemId)
                 .build();
 
-        triggerPlSend(appReadReturnMessage);
+        triggerPlSend(appReadReturnMessage, systemId);
     }
 
     private void handleNnarWriteReturn(Protocol.NnarWriteReturn nnarWriteReturn, String fromAbstractionId, String systemId) {
@@ -154,14 +153,14 @@ public class Application extends Abstraction {
                 .setType(Protocol.Message.Type.APP_WRITE_RETURN)
                 .setAppWriteReturn(appWriteReturn)
                 .setFromAbstractionId(this.abstractionId)
-                .setToAbstractionId(AbstractionIdUtil.HUB_ID)
+//                .setToAbstractionId(AbstractionIdUtil.HUB_ID)
                 .setSystemId(systemId)
                 .build();
 
-        triggerPlSend(appWriteReturnMessage);
+        triggerPlSend(appWriteReturnMessage, systemId);
     }
 
-    private void triggerPlSend(Protocol.Message message) {
+    private void triggerPlSend(Protocol.Message message, String systemId) {
         Protocol.PlSend plSend = Protocol.PlSend
                 .newBuilder()
                 .setDestination(process.getHub())
@@ -174,7 +173,7 @@ public class Application extends Abstraction {
                 .setPlSend(plSend)
                 .setFromAbstractionId(this.abstractionId)
                 .setToAbstractionId(AbstractionIdUtil.getChildAbstractionId(this.abstractionId, AbstractionType.PL))
-                .setSystemId(message.getSystemId())
+                .setSystemId(systemId)
                 .build();
 
         process.addMessageToQueue(plSendMessage);

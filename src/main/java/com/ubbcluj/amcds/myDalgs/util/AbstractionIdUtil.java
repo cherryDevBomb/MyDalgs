@@ -18,6 +18,10 @@ public class AbstractionIdUtil {
         return getChildAbstractionId(parentAbstractionId, abstractionType) + "[" + name + "]";
     }
 
+    public static String getNamedAncestorAbstractionId(String abstractionId) {
+        return abstractionId.substring(0, abstractionId.indexOf("]") + 1);
+    }
+
     public static String getInternalNameFromAbstractionId(String abstractionId) {
         return abstractionId.substring(abstractionId.indexOf("[") + 1, abstractionId.indexOf("]"));
     }

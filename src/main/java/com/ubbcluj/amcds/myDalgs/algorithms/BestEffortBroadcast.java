@@ -20,7 +20,7 @@ public class BestEffortBroadcast extends Abstraction {
                 return true;
             case PL_DELIVER:
 //                if (Protocol.Message.Type.APP_VALUE.equals(message.getPlDeliver().getMessage().getType())) {
-                    triggerBebDeliver(message.getPlDeliver().getMessage());
+                    triggerBebDeliver(message.getPlDeliver().getMessage(), message.getSystemId());
                     return true;
 //                }
         }
@@ -48,7 +48,7 @@ public class BestEffortBroadcast extends Abstraction {
         });
     }
 
-    private void triggerBebDeliver(Protocol.Message appValueMessage) {
+    private void triggerBebDeliver(Protocol.Message appValueMessage, String systemId) {
         Protocol.BebDeliver bebDeliver = Protocol.BebDeliver
                 .newBuilder()
                 .setMessage(appValueMessage)
@@ -61,7 +61,7 @@ public class BestEffortBroadcast extends Abstraction {
                 .setBebDeliver(bebDeliver)
                 .setFromAbstractionId(this.abstractionId)
                 .setToAbstractionId(AbstractionIdUtil.getParentAbstractionId(this.abstractionId))
-                .setSystemId(appValueMessage.getSystemId())
+                .setSystemId(systemId)
                 .build();
 
         process.addMessageToQueue(bebDeliverMessage);

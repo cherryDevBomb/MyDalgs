@@ -7,6 +7,7 @@ import com.ubbcluj.amcds.myDalgs.communication.Protocol;
 import com.ubbcluj.amcds.myDalgs.model.AbstractionType;
 import com.ubbcluj.amcds.myDalgs.network.MessageReceiver;
 import com.ubbcluj.amcds.myDalgs.network.MessageSender;
+import com.ubbcluj.amcds.myDalgs.util.AbstractionIdUtil;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -39,12 +40,12 @@ public class Process implements Runnable, Observer {
         Runnable eventLoop = () -> {
             while (true) {
                 messageQueue.forEach(message -> {
-                    System.out.println("Handling " + message.getType() + "; FromAbstractionId: " + message.getFromAbstractionId() + "; ToAbstractionId: " + message.getToAbstractionId());
+                    System.out.println(process.getOwner() + "-" + process.getIndex() + " handling " + message.getType() + "; FromAbstractionId: " + message.getFromAbstractionId() + "; ToAbstractionId: " + message.getToAbstractionId());
                     if (!abstractions.containsKey(message.getToAbstractionId())) {
 //                        //TODO register additional abstraction handlers - for nnar & uc
-//                        if (message.getToAbstractionId().contains(AbstractionType.NNAR.getId())) {
-//                            registerAbstraction(new NNAtomicRegister(message.getToAbstractionId(), this));
-//                        }
+                        if (message.getToAbstractionId().contains(AbstractionType.NNAR.getId())) {
+                            registerAbstraction(new NNAtomicRegister(AbstractionIdUtil.getNamedAncestorAbstractionId(message.getToAbstractionId()), this));
+                        }
                     }
                     if (abstractions.get(message.getToAbstractionId()).handle(message)) {
                         messageQueue.remove(message);
