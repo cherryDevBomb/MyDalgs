@@ -17,16 +17,16 @@ public class PerfectLink extends Abstraction {
     public boolean handle(Protocol.Message message) {
         switch (message.getType()) {
             case PL_SEND:
-                handlePlSend(message.getPlSend(), message.getToAbstractionId(), message.getSystemId());
+                handlePlSend(message.getPlSend(), message.getToAbstractionId());
                 return true;
             case NETWORK_MESSAGE:
-                triggerPlDeliver(message.getNetworkMessage(), AbstractionIdUtil.getParentAbstractionId(message.getToAbstractionId()), message.getSystemId());
+                triggerPlDeliver(message.getNetworkMessage(), AbstractionIdUtil.getParentAbstractionId(message.getToAbstractionId()));
                 return true;
         }
         return false;
     }
 
-    private void handlePlSend(Protocol.PlSend plSendMessage, String toAbstractionId, String systemId) {
+    private void handlePlSend(Protocol.PlSend plSendMessage, String toAbstractionId) {
         Protocol.ProcessId sender = process.getProcess();
         Protocol.ProcessId destination = plSendMessage.getDestination();
 
@@ -43,7 +43,7 @@ public class PerfectLink extends Abstraction {
                 .setNetworkMessage(networkMessage)
                 .setFromAbstractionId(this.abstractionId)
                 .setToAbstractionId(toAbstractionId)
-                .setSystemId(systemId)
+                .setSystemId(process.getSystemId())
                 .setMessageUuid(UUID.randomUUID().toString())
                 .build();
 
@@ -51,7 +51,7 @@ public class PerfectLink extends Abstraction {
     }
 
 
-    private void triggerPlDeliver(Protocol.NetworkMessage networkMessage, String toAbstractionId, String systemId) {
+    private void triggerPlDeliver(Protocol.NetworkMessage networkMessage, String toAbstractionId) {
         Optional<Protocol.ProcessId> sender = process.getProcessByHostAndPort(networkMessage.getSenderHost(), networkMessage.getSenderListeningPort());
         Protocol.PlDeliver.Builder plDeliverBuilder = Protocol.PlDeliver
                 .newBuilder()
@@ -65,7 +65,7 @@ public class PerfectLink extends Abstraction {
                 .setType(Protocol.Message.Type.PL_DELIVER)
                 .setPlDeliver(plDeliver)
                 .setToAbstractionId(toAbstractionId)
-                .setSystemId(systemId)
+                .setSystemId(process.getSystemId())
                 .build();
 
         process.addMessageToQueue(message);

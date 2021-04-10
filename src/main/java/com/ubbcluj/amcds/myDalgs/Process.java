@@ -19,6 +19,7 @@ public class Process implements Runnable, Observer {
 
     private Protocol.ProcessId hub;
     private List<Protocol.ProcessId> processes;
+    private String systemId;
     private final Queue<Protocol.Message> messageQueue;
     private final Map<String, Abstraction> abstractions;
 
@@ -138,6 +139,8 @@ public class Process implements Runnable, Observer {
     private void handleProcInitializeSystem(Protocol.Message message) {
         Protocol.ProcInitializeSystem procInitializeSystem = message.getProcInitializeSystem();
         this.processes = procInitializeSystem.getProcessesList();
+        this.process = getProcessByHostAndPort(this.process.getHost(), this.process.getPort()).get();
+        this.systemId = message.getSystemId();
     }
 
     public Optional<Protocol.ProcessId> getProcessByHostAndPort(String host, int port) {
@@ -156,5 +159,9 @@ public class Process implements Runnable, Observer {
 
     public List<Protocol.ProcessId> getProcesses() {
         return processes;
+    }
+
+    public String getSystemId() {
+        return systemId;
     }
 }

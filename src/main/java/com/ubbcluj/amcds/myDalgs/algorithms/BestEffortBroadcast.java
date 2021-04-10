@@ -16,18 +16,16 @@ public class BestEffortBroadcast extends Abstraction {
     public boolean handle(Protocol.Message message) {
         switch (message.getType()) {
             case BEB_BROADCAST:
-                handleBebBroadcast(message.getBebBroadcast(), message.getSystemId());
+                handleBebBroadcast(message.getBebBroadcast());
                 return true;
             case PL_DELIVER:
-//                if (Protocol.Message.Type.APP_VALUE.equals(message.getPlDeliver().getMessage().getType())) {
-                    triggerBebDeliver(message.getPlDeliver().getMessage(), message.getSystemId());
+                    triggerBebDeliver(message.getPlDeliver().getMessage());
                     return true;
-//                }
         }
         return false;
     }
 
-    private void handleBebBroadcast(Protocol.BebBroadcast bebBroadcast, String systemId) {
+    private void handleBebBroadcast(Protocol.BebBroadcast bebBroadcast) {
         process.getProcesses().forEach(p -> {
             Protocol.PlSend plSend = Protocol.PlSend
                     .newBuilder()
@@ -41,14 +39,14 @@ public class BestEffortBroadcast extends Abstraction {
                     .setPlSend(plSend)
                     .setFromAbstractionId(this.abstractionId)
                     .setToAbstractionId(AbstractionIdUtil.getChildAbstractionId(this.abstractionId, AbstractionType.PL))
-                    .setSystemId(systemId)
+                    .setSystemId(process.getSystemId())
                     .build();
 
             process.addMessageToQueue(plSendMessage);
         });
     }
 
-    private void triggerBebDeliver(Protocol.Message appValueMessage, String systemId) {
+    private void triggerBebDeliver(Protocol.Message appValueMessage) {
         Protocol.BebDeliver bebDeliver = Protocol.BebDeliver
                 .newBuilder()
                 .setMessage(appValueMessage)
@@ -61,7 +59,7 @@ public class BestEffortBroadcast extends Abstraction {
                 .setBebDeliver(bebDeliver)
                 .setFromAbstractionId(this.abstractionId)
                 .setToAbstractionId(AbstractionIdUtil.getParentAbstractionId(this.abstractionId))
-                .setSystemId(systemId)
+                .setSystemId(process.getSystemId())
                 .build();
 
         process.addMessageToQueue(bebDeliverMessage);

@@ -39,22 +39,22 @@ public class NNAtomicRegister extends Abstraction {
     public boolean handle(Protocol.Message message) {
         switch (message.getType()) {
             case NNAR_READ:
-                handleNnarRead(message.getSystemId());
+                handleNnarRead();
                 return true;
             case NNAR_WRITE:
-                handleNnarWrite(message.getNnarWrite(), message.getSystemId());
+                handleNnarWrite(message.getNnarWrite());
                 return true;
             case BEB_DELIVER:
                 Protocol.BebDeliver bebDeliver = message.getBebDeliver();
                 switch (bebDeliver.getMessage().getType()) {
                     case NNAR_INTERNAL_READ:
                         Protocol.NnarInternalRead nnarInternalRead = bebDeliver.getMessage().getNnarInternalRead();
-                        handleBebDeliverInternalRead(bebDeliver.getSender(), nnarInternalRead.getReadId(), bebDeliver.getMessage().getSystemId());
+                        handleBebDeliverInternalRead(bebDeliver.getSender(), nnarInternalRead.getReadId());
                         return true;
                     case NNAR_INTERNAL_WRITE:
                         Protocol.NnarInternalWrite nnarInternalWrite = bebDeliver.getMessage().getNnarInternalWrite();
                         NNARValue value = new NNARValue(nnarInternalWrite.getTimestamp(), nnarInternalWrite.getWriterRank(), nnarInternalWrite.getValue());
-                        handleBebDeliverInternalWrite(bebDeliver.getSender(), nnarInternalWrite.getReadId(), value, bebDeliver.getMessage().getSystemId());
+                        handleBebDeliverInternalWrite(bebDeliver.getSender(), nnarInternalWrite.getReadId(), value);
                         return true;
                     default:
                         return false;
@@ -66,14 +66,14 @@ public class NNAtomicRegister extends Abstraction {
                         Protocol.NnarInternalValue nnarInternalValue = plDeliver.getMessage().getNnarInternalValue();
                         if (nnarInternalValue.getReadId() == this.readId) {
                             NNARValue value = new NNARValue(nnarInternalValue.getTimestamp(), nnarInternalValue.getWriterRank(), nnarInternalValue.getValue());
-                            triggerPlDeliverValue(plDeliver.getSender(), nnarInternalValue.getReadId(), value, message.getSystemId());
+                            triggerPlDeliverValue(plDeliver.getSender(), nnarInternalValue.getReadId(), value);
                             return true;
                         }
                         return true;
                     case NNAR_INTERNAL_ACK:
                         Protocol.NnarInternalAck nnarInternalAck = plDeliver.getMessage().getNnarInternalAck();
                         if (nnarInternalAck.getReadId() == this.readId) {
-                            triggerPlDeliverAck(plDeliver.getSender(), nnarInternalAck.getReadId(), message.getSystemId());
+                            triggerPlDeliverAck(plDeliver.getSender(), nnarInternalAck.getReadId());
                             return true;
                         }
                         return true;
@@ -85,7 +85,7 @@ public class NNAtomicRegister extends Abstraction {
         }
     }
 
-    private void handleNnarRead(String systemId) {
+    private void handleNnarRead() {
         readId++;
         acks = 0;
         readList = new ConcurrentHashMap<>();
@@ -102,13 +102,13 @@ public class NNAtomicRegister extends Abstraction {
                 .setNnarInternalRead(nnarInternalRead)
                 .setFromAbstractionId(this.abstractionId)
                 .setToAbstractionId(this.abstractionId)
-                .setSystemId(systemId)
+                .setSystemId(process.getSystemId())
                 .build();
 
-        triggerBebBroadcast(nnarInternalReadMessage, systemId);
+        triggerBebBroadcast(nnarInternalReadMessage);
     }
 
-    private void handleNnarWrite(Protocol.NnarWrite nnarWrite, String systemId) {
+    private void handleNnarWrite(Protocol.NnarWrite nnarWrite) {
         readId++;
         writeVal = Protocol.Value
                 .newBuilder()
@@ -129,13 +129,13 @@ public class NNAtomicRegister extends Abstraction {
                 .setNnarInternalRead(nnarInternalRead)
                 .setFromAbstractionId(this.abstractionId)
                 .setToAbstractionId(this.abstractionId)
-                .setSystemId(systemId)
+                .setSystemId(process.getSystemId())
                 .build();
 
-        triggerBebBroadcast(nnarInternalReadMessage, systemId);
+        triggerBebBroadcast(nnarInternalReadMessage);
     }
 
-    private void handleBebDeliverInternalRead(Protocol.ProcessId sender, int incomingReadId, String systemId) {
+    private void handleBebDeliverInternalRead(Protocol.ProcessId sender, int incomingReadId) {
         Protocol.NnarInternalValue nnarInternalValue = Protocol.NnarInternalValue
                 .newBuilder()
                 .setReadId(incomingReadId)
@@ -150,7 +150,7 @@ public class NNAtomicRegister extends Abstraction {
                 .setNnarInternalValue(nnarInternalValue)
                 .setFromAbstractionId(this.abstractionId)
                 .setToAbstractionId(this.abstractionId)
-                .setSystemId(systemId)
+                .setSystemId(process.getSystemId())
                 .build();
 
         Protocol.PlSend plSend = Protocol.PlSend
@@ -165,13 +165,13 @@ public class NNAtomicRegister extends Abstraction {
                 .setPlSend(plSend)
                 .setFromAbstractionId(this.abstractionId)
                 .setToAbstractionId(AbstractionIdUtil.getChildAbstractionId(this.abstractionId, AbstractionType.PL))
-                .setSystemId(systemId)
+                .setSystemId(process.getSystemId())
                 .build();
 
         process.addMessageToQueue(plSendMessage);
     }
 
-    private void handleBebDeliverInternalWrite(Protocol.ProcessId sender, int incomingReadId, NNARValue incomingVal, String systemId) {
+    private void handleBebDeliverInternalWrite(Protocol.ProcessId sender, int incomingReadId, NNARValue incomingVal) {
         if (incomingVal.getTimestamp() > nnarValue.getTimestamp() || (incomingVal.getTimestamp() == nnarValue.getTimestamp() && incomingVal.getWriterRank() > nnarValue.getWriterRank())) {
             nnarValue = incomingVal;
         }
@@ -187,7 +187,7 @@ public class NNAtomicRegister extends Abstraction {
                 .setNnarInternalAck(nnarInternalAck)
                 .setFromAbstractionId(this.abstractionId)
                 .setToAbstractionId(this.abstractionId)
-                .setSystemId(systemId)
+                .setSystemId(process.getSystemId())
                 .build();
 
         Protocol.PlSend plSend = Protocol.PlSend
@@ -202,13 +202,13 @@ public class NNAtomicRegister extends Abstraction {
                 .setPlSend(plSend)
                 .setFromAbstractionId(this.abstractionId)
                 .setToAbstractionId(AbstractionIdUtil.getChildAbstractionId(this.abstractionId, AbstractionType.PL))
-                .setSystemId(systemId)
+                .setSystemId(process.getSystemId())
                 .build();
 
         process.addMessageToQueue(plSendMessage);
     }
 
-    private void triggerPlDeliverValue(Protocol.ProcessId sender, int incomingReadId, NNARValue incomingValue, String systemId) {
+    private void triggerPlDeliverValue(Protocol.ProcessId sender, int incomingReadId, NNARValue incomingValue) {
         // TODO senderId is what?
         String senderId = sender.getOwner() + sender.getIndex();
         this.readList.put(senderId, incomingValue);
@@ -241,14 +241,14 @@ public class NNAtomicRegister extends Abstraction {
                     .setNnarInternalWrite(nnarInternalWrite)
                     .setFromAbstractionId(this.abstractionId)
                     .setToAbstractionId(this.abstractionId)
-                    .setSystemId(systemId)
+                    .setSystemId(process.getSystemId())
                     .build();
 
-            triggerBebBroadcast(nnarInternalWriteMessage, systemId);
+            triggerBebBroadcast(nnarInternalWriteMessage);
         }
     }
 
-    private void triggerPlDeliverAck(Protocol.ProcessId sender, int incomingReadId, String systemId) {
+    private void triggerPlDeliverAck(Protocol.ProcessId sender, int incomingReadId) {
         acks++;
         if (acks > (process.getProcesses().size() / 2)) {
             acks = 0;
@@ -265,7 +265,7 @@ public class NNAtomicRegister extends Abstraction {
                         .setNnarReadReturn(nnarReadReturn)
                         .setFromAbstractionId(this.abstractionId)
                         .setToAbstractionId(AbstractionIdUtil.getParentAbstractionId(this.abstractionId))
-                        .setSystemId(systemId)
+                        .setSystemId(process.getSystemId())
                         .build();
 
                 process.addMessageToQueue(nnarReadReturnMessage);
@@ -280,7 +280,7 @@ public class NNAtomicRegister extends Abstraction {
                         .setNnarWriteReturn(nnarWriteReturn)
                         .setFromAbstractionId(this.abstractionId)
                         .setToAbstractionId(AbstractionIdUtil.getParentAbstractionId(this.abstractionId))
-                        .setSystemId(systemId)
+                        .setSystemId(process.getSystemId())
                         .build();
 
                 process.addMessageToQueue(nnarWriteReturnMessage);
@@ -288,7 +288,7 @@ public class NNAtomicRegister extends Abstraction {
         }
     }
 
-    private void triggerBebBroadcast(Protocol.Message message, String systemId) {
+    private void triggerBebBroadcast(Protocol.Message message) {
         Protocol.BebBroadcast bebBroadcast = Protocol.BebBroadcast
                 .newBuilder()
                 .setMessage(message)
@@ -300,7 +300,7 @@ public class NNAtomicRegister extends Abstraction {
                 .setBebBroadcast(bebBroadcast)
                 .setFromAbstractionId(this.abstractionId)
                 .setToAbstractionId(AbstractionIdUtil.getChildAbstractionId(this.abstractionId, AbstractionType.BEB))
-                .setSystemId(systemId)
+                .setSystemId(process.getSystemId())
                 .build();
 
         process.addMessageToQueue(bebBroadcastMessage);

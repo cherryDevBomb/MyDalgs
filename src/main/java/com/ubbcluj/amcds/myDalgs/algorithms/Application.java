@@ -20,35 +20,33 @@ public class Application extends Abstraction {
                 Protocol.PlDeliver plDeliver = message.getPlDeliver();
                 switch (plDeliver.getMessage().getType()) {
                     case APP_BROADCAST:
-                        handleAppBroadcast(plDeliver.getMessage().getAppBroadcast(), plDeliver.getMessage().getSystemId());
+                        handleAppBroadcast(plDeliver.getMessage().getAppBroadcast());
                         return true;
                     case APP_READ:
-                        handleAppRead(plDeliver.getMessage().getAppRead(), plDeliver.getMessage().getSystemId());
+                        handleAppRead(plDeliver.getMessage().getAppRead());
                         return true;
                     case APP_WRITE:
-                        handleAppWrite(plDeliver.getMessage().getAppWrite(), plDeliver.getMessage().getSystemId());
+                        handleAppWrite(plDeliver.getMessage().getAppWrite());
                         return true;
                 }
                 System.out.println("Application cannot handle PL_DELIVER with inner " + plDeliver.getMessage().getType()); //TODO remove when not needed
                 return false;
             case BEB_DELIVER:
                 Protocol.Message innerMessage = message.getBebDeliver().getMessage();
-//                if (Protocol.Message.Type.APP_VALUE.equals(innerMessage.getType())) {
-                    triggerPlSend(innerMessage, message.getSystemId());
+                    triggerPlSend(innerMessage);
                     return true;
-//                }
             case NNAR_READ_RETURN:
-                handleNnarReadReturn(message.getNnarReadReturn(), message.getFromAbstractionId(), message.getSystemId());
+                handleNnarReadReturn(message.getNnarReadReturn(), message.getFromAbstractionId());
                 return true;
             case NNAR_WRITE_RETURN:
-                handleNnarWriteReturn(message.getNnarWriteReturn(), message.getFromAbstractionId(), message.getSystemId());
+                handleNnarWriteReturn(message.getNnarWriteReturn(), message.getFromAbstractionId());
                 return true;
         }
         System.out.println(message.getType());
         return false;
     }
 
-    private void handleAppBroadcast(Protocol.AppBroadcast appBroadcast, String systemId) {
+    private void handleAppBroadcast(Protocol.AppBroadcast appBroadcast) {
         Protocol.AppValue appValue = Protocol.AppValue
                 .newBuilder()
                 .setValue(appBroadcast.getValue())
@@ -60,7 +58,7 @@ public class Application extends Abstraction {
                 .setAppValue(appValue)
                 .setFromAbstractionId(this.abstractionId)
                 .setToAbstractionId(this.abstractionId)
-                .setSystemId(systemId)
+                .setSystemId(process.getSystemId())
                 .build();
 
         Protocol.BebBroadcast bebBroadcast = Protocol.BebBroadcast
@@ -74,13 +72,13 @@ public class Application extends Abstraction {
                 .setBebBroadcast(bebBroadcast)
                 .setFromAbstractionId(this.abstractionId)
                 .setToAbstractionId(AbstractionIdUtil.getChildAbstractionId(this.abstractionId, AbstractionType.BEB))
-                .setSystemId(systemId)
+                .setSystemId(process.getSystemId())
                 .build();
 
         process.addMessageToQueue(bebBroadcastMessage);
     }
 
-    private void handleAppRead(Protocol.AppRead appRead, String systemId) {
+    private void handleAppRead(Protocol.AppRead appRead) {
         String nnarAbstractionId = AbstractionIdUtil.getNamedAbstractionId(this.abstractionId, AbstractionType.NNAR, appRead.getRegister());
         process.registerAbstraction(new NNAtomicRegister(nnarAbstractionId, process));
 
@@ -94,13 +92,13 @@ public class Application extends Abstraction {
                 .setNnarRead(nnarRead)
                 .setFromAbstractionId(this.abstractionId)
                 .setToAbstractionId(nnarAbstractionId)
-                .setSystemId(systemId)
+                .setSystemId(process.getSystemId())
                 .build();
 
         process.addMessageToQueue(nnarReadMessage);
     }
 
-    private void handleAppWrite(Protocol.AppWrite appWrite, String systemId) {
+    private void handleAppWrite(Protocol.AppWrite appWrite) {
         // register app.nnar[register] abstraction if not present
         String nnarAbstractionId = AbstractionIdUtil.getNamedAbstractionId(this.abstractionId, AbstractionType.NNAR, appWrite.getRegister());
         process.registerAbstraction(new NNAtomicRegister(nnarAbstractionId, process));
@@ -116,14 +114,14 @@ public class Application extends Abstraction {
                 .setNnarWrite(nnarWrite)
                 .setFromAbstractionId(this.abstractionId)
                 .setToAbstractionId(nnarAbstractionId)
-                .setSystemId(systemId)
+                .setSystemId(process.getSystemId())
                 .build();
 
         process.addMessageToQueue(nnarWriteMessage);
     }
 
 
-    private void handleNnarReadReturn(Protocol.NnarReadReturn nnarReadReturn, String fromAbstractionId, String systemId) {
+    private void handleNnarReadReturn(Protocol.NnarReadReturn nnarReadReturn, String fromAbstractionId) {
         Protocol.AppReadReturn appReadReturn = Protocol.AppReadReturn
                 .newBuilder()
                 .setRegister(AbstractionIdUtil.getInternalNameFromAbstractionId(fromAbstractionId))
@@ -135,14 +133,14 @@ public class Application extends Abstraction {
                 .setType(Protocol.Message.Type.APP_READ_RETURN)
                 .setAppReadReturn(appReadReturn)
                 .setFromAbstractionId(this.abstractionId)
-//                .setToAbstractionId(AbstractionIdUtil.HUB_ID)
-                .setSystemId(systemId)
+                .setToAbstractionId(AbstractionIdUtil.HUB_ID)
+                .setSystemId(process.getSystemId())
                 .build();
 
-        triggerPlSend(appReadReturnMessage, systemId);
+        triggerPlSend(appReadReturnMessage);
     }
 
-    private void handleNnarWriteReturn(Protocol.NnarWriteReturn nnarWriteReturn, String fromAbstractionId, String systemId) {
+    private void handleNnarWriteReturn(Protocol.NnarWriteReturn nnarWriteReturn, String fromAbstractionId) {
         Protocol.AppWriteReturn appWriteReturn = Protocol.AppWriteReturn
                 .newBuilder()
                 .setRegister(AbstractionIdUtil.getInternalNameFromAbstractionId(fromAbstractionId))
@@ -153,14 +151,14 @@ public class Application extends Abstraction {
                 .setType(Protocol.Message.Type.APP_WRITE_RETURN)
                 .setAppWriteReturn(appWriteReturn)
                 .setFromAbstractionId(this.abstractionId)
-//                .setToAbstractionId(AbstractionIdUtil.HUB_ID)
-                .setSystemId(systemId)
+                .setToAbstractionId(AbstractionIdUtil.HUB_ID)
+                .setSystemId(process.getSystemId())
                 .build();
 
-        triggerPlSend(appWriteReturnMessage, systemId);
+        triggerPlSend(appWriteReturnMessage);
     }
 
-    private void triggerPlSend(Protocol.Message message, String systemId) {
+    private void triggerPlSend(Protocol.Message message) {
         Protocol.PlSend plSend = Protocol.PlSend
                 .newBuilder()
                 .setDestination(process.getHub())
@@ -173,7 +171,7 @@ public class Application extends Abstraction {
                 .setPlSend(plSend)
                 .setFromAbstractionId(this.abstractionId)
                 .setToAbstractionId(AbstractionIdUtil.getChildAbstractionId(this.abstractionId, AbstractionType.PL))
-                .setSystemId(systemId)
+                .setSystemId(process.getSystemId())
                 .build();
 
         process.addMessageToQueue(plSendMessage);
