@@ -1,6 +1,7 @@
 package com.ubbcluj.amcds.myDalgs;
 
 import com.ubbcluj.amcds.myDalgs.communication.Protocol;
+import com.ubbcluj.amcds.myDalgs.util.AbstractionIdUtil;
 
 import java.util.Arrays;
 import java.util.List;
@@ -16,7 +17,7 @@ public class Main {
                 .newBuilder()
                 .setHost(hubHost)
                 .setPort(hubPort)
-                .setOwner("hub")
+                .setOwner(AbstractionIdUtil.HUB_ID)
                 .build();
 
         final String processHost = args[2];

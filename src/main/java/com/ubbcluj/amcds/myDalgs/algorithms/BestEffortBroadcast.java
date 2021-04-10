@@ -19,10 +19,10 @@ public class BestEffortBroadcast extends Abstraction {
                 handleBebBroadcast(message.getBebBroadcast(), message.getSystemId());
                 return true;
             case PL_DELIVER:
-                if (Protocol.Message.Type.APP_VALUE.equals(message.getPlDeliver().getMessage().getType())) {
+//                if (Protocol.Message.Type.APP_VALUE.equals(message.getPlDeliver().getMessage().getType())) {
                     triggerBebDeliver(message.getPlDeliver().getMessage());
                     return true;
-                }
+//                }
         }
         return false;
     }
