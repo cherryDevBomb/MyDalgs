@@ -19,7 +19,7 @@ public class BestEffortBroadcast extends Abstraction {
                 handleBebBroadcast(message.getBebBroadcast());
                 return true;
             case PL_DELIVER:
-                    triggerBebDeliver(message.getPlDeliver().getMessage());
+                    triggerBebDeliver(message.getPlDeliver().getMessage(), message.getPlDeliver().getSender());
                     return true;
         }
         return false;
@@ -46,11 +46,11 @@ public class BestEffortBroadcast extends Abstraction {
         });
     }
 
-    private void triggerBebDeliver(Protocol.Message appValueMessage) {
+    private void triggerBebDeliver(Protocol.Message appValueMessage, Protocol.ProcessId sender) {
         Protocol.BebDeliver bebDeliver = Protocol.BebDeliver
                 .newBuilder()
                 .setMessage(appValueMessage)
-                .setSender(process.getProcess())
+                .setSender(sender)
                 .build();
 
         Protocol.Message bebDeliverMessage = Protocol.Message
