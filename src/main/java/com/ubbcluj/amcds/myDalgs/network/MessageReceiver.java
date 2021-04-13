@@ -37,7 +37,6 @@ public class MessageReceiver extends Observable implements Runnable {
             int readMessageSize = dataInputStream.read(byteBuffer, 0, messageSize);
 
             if (messageSize != readMessageSize) {
-                //TODO implement stubborn read
                 throw new RuntimeException("Network message has incorrect size: expected = " + messageSize + ", actual = " + readMessageSize);
             }
 

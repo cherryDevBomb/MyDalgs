@@ -209,7 +209,6 @@ public class NNAtomicRegister extends Abstraction {
     }
 
     private void triggerPlDeliverValue(Protocol.ProcessId sender, int incomingReadId, NNARValue incomingValue) {
-        // TODO senderId is what?
         String senderId = sender.getOwner() + sender.getIndex();
         this.readList.put(senderId, incomingValue);
         if (this.readList.size() > (process.getProcesses().size() / 2)) {

@@ -29,7 +29,6 @@ public class Application extends Abstraction {
                         handleAppWrite(plDeliver.getMessage().getAppWrite());
                         return true;
                 }
-                System.out.println("Application cannot handle PL_DELIVER with inner " + plDeliver.getMessage().getType()); //TODO remove when not needed
                 return false;
             case BEB_DELIVER:
                 Protocol.Message innerMessage = message.getBebDeliver().getMessage();

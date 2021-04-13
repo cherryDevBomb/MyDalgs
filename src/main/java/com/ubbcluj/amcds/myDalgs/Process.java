@@ -43,7 +43,6 @@ public class Process implements Runnable, Observer {
                 messageQueue.forEach(message -> {
                     System.out.println(process.getOwner() + "-" + process.getIndex() + " handling " + message.getType() + "; FromAbstractionId: " + message.getFromAbstractionId() + "; ToAbstractionId: " + message.getToAbstractionId());
                     if (!abstractions.containsKey(message.getToAbstractionId())) {
-//                        //TODO register additional abstraction handlers - for nnar & uc
                         if (message.getToAbstractionId().contains(AbstractionType.NNAR.getId())) {
                             registerAbstraction(new NNAtomicRegister(AbstractionIdUtil.getNamedAncestorAbstractionId(message.getToAbstractionId()), this));
                         }
@@ -115,10 +114,9 @@ public class Process implements Runnable, Observer {
 
     /**
      * This method handles an incoming Message.
-     * Triggered by calling the notifyObservers() method from the MessageReceiver or from an abstraction handler.
      * If message is of type PROC_INITIALIZE_SYSTEM, it is handled by the process.
-     * If message is another type of message coming from the network, a PlDeliver message is created and added to the queue.
-     * Otherwise, the message is directly added to the queue.
+     * Otherwise, the message is added to the queue.
+     * Triggered by calling the notifyObservers() method from the MessageReceiver.
      *
      * @param o   source of the message
      * @param arg incoming message
