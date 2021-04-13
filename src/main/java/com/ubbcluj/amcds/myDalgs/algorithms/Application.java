@@ -41,7 +41,6 @@ public class Application extends Abstraction {
                 handleNnarWriteReturn(message.getNnarWriteReturn(), message.getFromAbstractionId());
                 return true;
         }
-        System.out.println(message.getType());
         return false;
     }
 

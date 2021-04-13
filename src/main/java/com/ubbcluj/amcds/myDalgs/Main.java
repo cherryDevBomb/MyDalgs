@@ -33,9 +33,9 @@ public class Main {
                         .build())
                 .collect(Collectors.toList());
 
-        Thread process1 = new Thread(new Process(processIds.get(0), hubInfo));
-        Thread process2 = new Thread(new Process(processIds.get(1), hubInfo));
-        Thread process3 = new Thread(new Process(processIds.get(2), hubInfo));
+        Thread process1 = new Thread(new Process(processIds.get(0), hubInfo), processHost + ":" + processPorts.get(0));
+        Thread process2 = new Thread(new Process(processIds.get(1), hubInfo), processHost + ":" + processPorts.get(1));
+        Thread process3 = new Thread(new Process(processIds.get(2), hubInfo), processHost + ":" + processPorts.get(2));
 
         process1.start();
         process2.start();

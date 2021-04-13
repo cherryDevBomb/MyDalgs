@@ -8,12 +8,16 @@ import com.ubbcluj.amcds.myDalgs.model.AbstractionType;
 import com.ubbcluj.amcds.myDalgs.network.MessageReceiver;
 import com.ubbcluj.amcds.myDalgs.network.MessageSender;
 import com.ubbcluj.amcds.myDalgs.util.AbstractionIdUtil;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 public class Process implements Runnable, Observer {
+
+    private static final Logger log = LoggerFactory.getLogger(Process.class);
 
     private Protocol.ProcessId process;
 
@@ -32,7 +36,7 @@ public class Process implements Runnable, Observer {
 
     @Override
     public void run() {
-        System.out.println("Running process " + process.getOwner() + "-" + process.getIndex());
+        log.info("Running process {}-{}", process.getOwner(), process.getIndex());
 
         //register abstractions
         registerAbstraction(new Application(AbstractionType.APP.getId(), this));
@@ -41,7 +45,7 @@ public class Process implements Runnable, Observer {
         Runnable eventLoop = () -> {
             while (true) {
                 messageQueue.forEach(message -> {
-                    System.out.println(process.getOwner() + "-" + process.getIndex() + " handling " + message.getType() + "; FromAbstractionId: " + message.getFromAbstractionId() + "; ToAbstractionId: " + message.getToAbstractionId());
+                    log.info("Handling {}; FromAbstractionId: {}; ToAbstractionId: {}", message.getType(), message.getFromAbstractionId(), message.getToAbstractionId());
                     if (!abstractions.containsKey(message.getToAbstractionId())) {
                         if (message.getToAbstractionId().contains(AbstractionType.NNAR.getId())) {
                             registerAbstraction(new NNAtomicRegister(AbstractionIdUtil.getNamedAncestorAbstractionId(message.getToAbstractionId()), this));
@@ -53,12 +57,13 @@ public class Process implements Runnable, Observer {
                 });
             }
         };
-        Thread eventLoopThread = new Thread(eventLoop);
+        String processName = String.format("%s-%d : %d", process.getOwner(), process.getIndex(), process.getPort());
+        Thread eventLoopThread = new Thread(eventLoop, processName);
         eventLoopThread.start();
 
         MessageReceiver messageReceiver = new MessageReceiver(process.getPort());
         messageReceiver.addObserver(this);
-        Thread messageReceiverThread = new Thread(messageReceiver);
+        Thread messageReceiverThread = new Thread(messageReceiver, processName);
         messageReceiverThread.start();
 
         register();

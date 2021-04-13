@@ -1,6 +1,8 @@
 package com.ubbcluj.amcds.myDalgs.network;
 
 import com.ubbcluj.amcds.myDalgs.communication.Protocol;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.DataInputStream;
 import java.io.IOException;
@@ -9,6 +11,8 @@ import java.net.Socket;
 import java.util.Observable;
 
 public class MessageReceiver extends Observable implements Runnable {
+
+    private static final Logger log = LoggerFactory.getLogger(MessageReceiver.class);
 
     private final int processPort;
 
@@ -19,7 +23,7 @@ public class MessageReceiver extends Observable implements Runnable {
     @Override
     public void run() {
         try (ServerSocket serverSocket = new ServerSocket(processPort)) {
-            System.out.println("Waiting for requests on port " + processPort);
+            log.info("Waiting for requests");
             while (true) {
                 receiveMessage(serverSocket);
             }
@@ -45,6 +49,8 @@ public class MessageReceiver extends Observable implements Runnable {
             if (!Protocol.Message.Type.NETWORK_MESSAGE.equals(message.getType())) {
                 throw new RuntimeException("Network message has incorrect type: expected = " + Protocol.Message.Type.NETWORK_MESSAGE + ", actual = " + message.getType());
             }
+
+            log.info("Received {} from {}", message.getNetworkMessage().getMessage().getType(), message.getNetworkMessage().getSenderListeningPort());
 
             setChanged();
             notifyObservers(message);
