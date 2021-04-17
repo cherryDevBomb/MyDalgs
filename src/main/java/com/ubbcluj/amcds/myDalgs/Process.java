@@ -12,8 +12,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.*;
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.LinkedBlockingQueue;
 
 public class Process implements Runnable, Observer {
 
@@ -24,13 +25,13 @@ public class Process implements Runnable, Observer {
     private Protocol.ProcessId hub;
     private List<Protocol.ProcessId> processes;
     private String systemId;
-    private final Queue<Protocol.Message> messageQueue;
+    private final BlockingQueue<Protocol.Message> messageQueue;
     private final Map<String, Abstraction> abstractions;
 
-    public Process(Protocol.ProcessId process, Protocol.ProcessId hub) {
+    public Process(Protocol.ProcessId process, Protocol.ProcessId hub) throws InterruptedException {
         this.process = process;
         this.hub = hub;
-        this.messageQueue = new ConcurrentLinkedQueue<>();
+        this.messageQueue = new LinkedBlockingQueue<>();
         this.abstractions = new ConcurrentHashMap<>();
     }
 
@@ -44,17 +45,18 @@ public class Process implements Runnable, Observer {
         // start event loop
         Runnable eventLoop = () -> {
             while (true) {
-                messageQueue.forEach(message -> {
+                try {
+                    Protocol.Message message = messageQueue.take();
                     log.info("Handling {}; FromAbstractionId: {}; ToAbstractionId: {}", message.getType(), message.getFromAbstractionId(), message.getToAbstractionId());
                     if (!abstractions.containsKey(message.getToAbstractionId())) {
                         if (message.getToAbstractionId().contains(AbstractionType.NNAR.getId())) {
                             registerAbstraction(new NNAtomicRegister(AbstractionIdUtil.getNamedAncestorAbstractionId(message.getToAbstractionId()), this));
                         }
                     }
-                    if (abstractions.get(message.getToAbstractionId()).handle(message)) {
-                        messageQueue.remove(message);
-                    }
-                });
+                    abstractions.get(message.getToAbstractionId()).handle(message);
+                } catch (InterruptedException interruptedException) {
+                    log.error("Error handling message.");
+                }
             }
         };
         String processName = String.format("%s-%d : %d", process.getOwner(), process.getIndex(), process.getPort());
@@ -81,7 +83,11 @@ public class Process implements Runnable, Observer {
     }
 
     public void addMessageToQueue(Protocol.Message message) {
-        messageQueue.add(message);
+        try {
+            messageQueue.put(message);
+        } catch (InterruptedException e) {
+            log.error("Error adding message to queue.");
+        }
     }
 
     private void register() {
