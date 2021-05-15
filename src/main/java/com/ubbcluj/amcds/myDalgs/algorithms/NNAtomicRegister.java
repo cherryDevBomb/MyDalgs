@@ -5,7 +5,7 @@ import com.ubbcluj.amcds.myDalgs.communication.Protocol;
 import com.ubbcluj.amcds.myDalgs.model.AbstractionType;
 import com.ubbcluj.amcds.myDalgs.model.NNARValue;
 import com.ubbcluj.amcds.myDalgs.util.AbstractionIdUtil;
-import com.ubbcluj.amcds.myDalgs.util.ValueUtil;
+import com.ubbcluj.amcds.myDalgs.util.DalgsUtil;
 
 import java.util.Comparator;
 import java.util.Map;
@@ -25,10 +25,10 @@ public class NNAtomicRegister extends Abstraction {
         super(abstractionId, process);
         nnarValue = new NNARValue();
         acks = 0;
-        writeVal = ValueUtil.buildUndefinedValue();
+        writeVal = DalgsUtil.buildUndefinedValue();
         readId = 0;
         readList = new ConcurrentHashMap<>();
-        readVal = ValueUtil.buildUndefinedValue();
+        readVal = DalgsUtil.buildUndefinedValue();
         isReading = false;
 
         process.registerAbstraction(new BestEffortBroadcast(AbstractionIdUtil.getChildAbstractionId(abstractionId, AbstractionType.BEB), process));

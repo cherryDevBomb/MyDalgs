@@ -1,7 +1,7 @@
 package com.ubbcluj.amcds.myDalgs.model;
 
 import com.ubbcluj.amcds.myDalgs.communication.Protocol;
-import com.ubbcluj.amcds.myDalgs.util.ValueUtil;
+import com.ubbcluj.amcds.myDalgs.util.DalgsUtil;
 
 public class NNARValue {
 
@@ -12,7 +12,7 @@ public class NNARValue {
     public NNARValue() {
         timestamp = 0;
         writerRank = 0;
-        value = ValueUtil.buildUndefinedValue();
+        value = DalgsUtil.buildUndefinedValue();
     }
 
     public NNARValue(int timestamp, int writerRank, Protocol.Value value) {

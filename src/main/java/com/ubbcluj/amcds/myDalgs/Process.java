@@ -3,6 +3,7 @@ package com.ubbcluj.amcds.myDalgs;
 import com.ubbcluj.amcds.myDalgs.algorithms.Abstraction;
 import com.ubbcluj.amcds.myDalgs.algorithms.Application;
 import com.ubbcluj.amcds.myDalgs.algorithms.NNAtomicRegister;
+import com.ubbcluj.amcds.myDalgs.algorithms.UniformConsensus;
 import com.ubbcluj.amcds.myDalgs.communication.Protocol;
 import com.ubbcluj.amcds.myDalgs.model.AbstractionType;
 import com.ubbcluj.amcds.myDalgs.network.MessageReceiver;
@@ -51,9 +52,15 @@ public class Process implements Runnable, Observer {
                     if (!abstractions.containsKey(message.getToAbstractionId())) {
                         if (message.getToAbstractionId().contains(AbstractionType.NNAR.getId())) {
                             registerAbstraction(new NNAtomicRegister(AbstractionIdUtil.getNamedAncestorAbstractionId(message.getToAbstractionId()), this));
+//                        } else if (message.getToAbstractionId().contains(AbstractionType.UC.getId())) {
+//                            registerAbstraction(new UniformConsensus(message.getToAbstractionId(), this));
+//                        }
+//                        } else if (message.getType() == Protocol.Message.Type.APP_PROPOSE) {
+//                            registerAbstraction(new UniformConsensus(AbstractionIdUtil.getNamedAbstractionId(message.getToAbstractionId(), AbstractionType.UC, message.getAppPropose().getTopic()), this));
+//                        }
                         }
                     }
-                    abstractions.get(message.getToAbstractionId()).handle(message);
+                    abstractions.get(message.getToAbstractionId()).handle(message); //TODO only handle if can
                 } catch (InterruptedException interruptedException) {
                     log.error("Error handling message.");
                 }

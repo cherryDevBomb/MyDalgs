@@ -28,17 +28,23 @@ public class Application extends Abstraction {
                     case APP_WRITE:
                         handleAppWrite(plDeliver.getMessage().getAppWrite());
                         return true;
+                    case APP_PROPOSE:
+                        handleAppPropose(plDeliver.getMessage().getAppPropose());
+                        return true;
                 }
                 return false;
             case BEB_DELIVER:
                 Protocol.Message innerMessage = message.getBebDeliver().getMessage();
-                    triggerPlSend(innerMessage);
-                    return true;
+                triggerPlSend(innerMessage);
+                return true;
             case NNAR_READ_RETURN:
                 handleNnarReadReturn(message.getNnarReadReturn(), message.getFromAbstractionId());
                 return true;
             case NNAR_WRITE_RETURN:
                 handleNnarWriteReturn(message.getNnarWriteReturn(), message.getFromAbstractionId());
+                return true;
+            case UC_DECIDE:
+                handleUcDecide(message.getUcDecide());
                 return true;
         }
         return false;
@@ -154,6 +160,45 @@ public class Application extends Abstraction {
                 .build();
 
         triggerPlSend(appWriteReturnMessage);
+    }
+
+    private void handleAppPropose(Protocol.AppPropose appPropose) {
+        // register app.uc[topic] abstraction
+        process.registerAbstraction(new UniformConsensus(AbstractionIdUtil.getNamedAbstractionId(this.abstractionId, AbstractionType.UC, appPropose.getTopic()), process));
+
+        Protocol.UcPropose ucPropose = Protocol.UcPropose
+                .newBuilder()
+                .setValue(appPropose.getValue())
+                .build();
+
+        Protocol.Message ucProposeMessage = Protocol.Message
+                .newBuilder()
+                .setType(Protocol.Message.Type.UC_PROPOSE)
+                .setUcPropose(ucPropose)
+                .setFromAbstractionId(this.abstractionId)
+                .setToAbstractionId(AbstractionIdUtil.getNamedAbstractionId(this.abstractionId, AbstractionType.UC, appPropose.getTopic()))
+                .setSystemId(process.getSystemId())
+                .build();
+
+        process.addMessageToQueue(ucProposeMessage);
+    }
+
+    private void handleUcDecide(Protocol.UcDecide ucDecide) {
+        Protocol.AppDecide appDecide = Protocol.AppDecide
+                .newBuilder()
+                .setValue(ucDecide.getValue())
+                .build();
+
+        Protocol.Message appDecideMessage = Protocol.Message
+                .newBuilder()
+                .setType(Protocol.Message.Type.APP_DECIDE)
+                .setAppDecide(appDecide)
+                .setFromAbstractionId(this.abstractionId)
+                .setToAbstractionId(AbstractionIdUtil.HUB_ID)
+                .setSystemId(process.getSystemId())
+                .build();
+
+        triggerPlSend(appDecideMessage);
     }
 
     private void triggerPlSend(Protocol.Message message) {

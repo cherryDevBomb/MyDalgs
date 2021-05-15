@@ -120,7 +120,7 @@ public class EventuallyPerfectFailureDetector extends Abstraction {
                 .setType(Protocol.Message.Type.EPFD_SUSPECT)
                 .setEpfdSuspect(epfdSuspect)
                 .setFromAbstractionId(this.abstractionId)
-                .setToAbstractionId(this.abstractionId) //TODO WTF should be here?
+                .setToAbstractionId(AbstractionIdUtil.getParentAbstractionId(this.abstractionId)) //TODO WTF should be here?
                 .setSystemId(process.getSystemId())
                 .build();
 
@@ -138,7 +138,7 @@ public class EventuallyPerfectFailureDetector extends Abstraction {
                 .setType(Protocol.Message.Type.EPFD_RESTORE)
                 .setEpfdRestore(epfdRestore)
                 .setFromAbstractionId(this.abstractionId)
-                .setToAbstractionId(this.abstractionId) //TODO WTF should be here?
+                .setToAbstractionId(AbstractionIdUtil.getParentAbstractionId(this.abstractionId)) //TODO WTF should be here?
                 .setSystemId(process.getSystemId())
                 .build();
 
