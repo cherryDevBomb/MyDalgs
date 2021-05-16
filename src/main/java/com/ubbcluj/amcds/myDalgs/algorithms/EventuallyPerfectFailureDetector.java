@@ -5,10 +5,8 @@ import com.ubbcluj.amcds.myDalgs.communication.Protocol;
 import com.ubbcluj.amcds.myDalgs.model.AbstractionType;
 import com.ubbcluj.amcds.myDalgs.util.AbstractionIdUtil;
 
-import java.util.HashSet;
-import java.util.Set;
-import java.util.Timer;
-import java.util.TimerTask;
+import java.util.*;
+import java.util.concurrent.CopyOnWriteArraySet;
 
 public class EventuallyPerfectFailureDetector extends Abstraction {
 
@@ -20,8 +18,8 @@ public class EventuallyPerfectFailureDetector extends Abstraction {
 
     public EventuallyPerfectFailureDetector(String abstractionId, Process process) {
         super(abstractionId, process);
-        alive = new HashSet<>(process.getProcesses());
-        suspected = new HashSet<>();
+        alive = new CopyOnWriteArraySet<>(process.getProcesses());
+        suspected = new CopyOnWriteArraySet<>();
         delay = DELTA;
         startTimer(delay);
 
@@ -52,7 +50,7 @@ public class EventuallyPerfectFailureDetector extends Abstraction {
     }
 
     private void handleEpfdTimeout() {
-        HashSet<Protocol.ProcessId> aliveSuspectIntersection = new HashSet<>(alive);
+        Set<Protocol.ProcessId> aliveSuspectIntersection = new CopyOnWriteArraySet<>(alive); // TODO check this
         aliveSuspectIntersection.retainAll(suspected);
         if (!aliveSuspectIntersection.isEmpty()) {
             delay += DELTA;

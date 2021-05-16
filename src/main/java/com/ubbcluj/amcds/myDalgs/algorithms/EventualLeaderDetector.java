@@ -6,8 +6,8 @@ import com.ubbcluj.amcds.myDalgs.model.AbstractionType;
 import com.ubbcluj.amcds.myDalgs.util.AbstractionIdUtil;
 import com.ubbcluj.amcds.myDalgs.util.DalgsUtil;
 
-import java.util.HashSet;
 import java.util.Set;
+import java.util.concurrent.CopyOnWriteArraySet;
 
 public class EventualLeaderDetector extends Abstraction {
 
@@ -16,7 +16,7 @@ public class EventualLeaderDetector extends Abstraction {
 
     public EventualLeaderDetector(String abstractionId, Process process) {
         super(abstractionId, process);
-        suspected = new HashSet<>();
+        suspected = new CopyOnWriteArraySet<>();
 
         process.registerAbstraction(new EventuallyPerfectFailureDetector(AbstractionIdUtil.getChildAbstractionId(abstractionId, AbstractionType.EPFD), process));
     }
@@ -38,7 +38,7 @@ public class EventualLeaderDetector extends Abstraction {
     }
 
     private void performCheck() {
-        Set<Protocol.ProcessId> notSuspected = new HashSet<>(process.getProcesses());
+        Set<Protocol.ProcessId> notSuspected = new CopyOnWriteArraySet<>(process.getProcesses());
         notSuspected.removeAll(suspected);
         Protocol.ProcessId maxRankedProcess = DalgsUtil.getMaxRankedProcess(notSuspected);
         if (maxRankedProcess != null && !maxRankedProcess.equals(leader)) {
