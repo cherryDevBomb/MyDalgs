@@ -46,6 +46,7 @@ public class UniformConsensus extends Abstraction {
                 newts = message.getEcStartEpoch().getNewTimestamp();
                 newLeader = message.getEcStartEpoch().getNewLeader();
                 triggerEpEtsAbort();
+                return true;
             case EP_ABORTED:
                 if (message.getEpAborted().getEts() == ets) {
                     ets = newts;
@@ -63,7 +64,9 @@ public class UniformConsensus extends Abstraction {
                         decided = true;
                         triggerUcDecide(message.getEpDecide().getValue());
                     }
+                    return true;
                 }
+                return false;
             default:
                 return false;
         }

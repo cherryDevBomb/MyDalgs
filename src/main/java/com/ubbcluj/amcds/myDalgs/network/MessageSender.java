@@ -23,7 +23,7 @@ public class MessageSender {
             dataOutputStream.writeInt(serializedMessage.length);
             dataOutputStream.write(serializedMessage);
         } catch (IOException e) {
-            e.printStackTrace();
+//            e.printStackTrace();
         }
     }
 }

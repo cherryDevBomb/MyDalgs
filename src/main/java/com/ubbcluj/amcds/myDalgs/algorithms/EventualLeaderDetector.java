@@ -31,6 +31,7 @@ public class EventualLeaderDetector extends Abstraction {
             case EPFD_RESTORE:
                 suspected.remove(message.getEpfdSuspect().getProcess());
                 performCheck();
+                return true;
             default:
                 return false;
         }
@@ -40,7 +41,7 @@ public class EventualLeaderDetector extends Abstraction {
         Set<Protocol.ProcessId> notSuspected = new HashSet<>(process.getProcesses());
         notSuspected.removeAll(suspected);
         Protocol.ProcessId maxRankedProcess = DalgsUtil.getMaxRankedProcess(notSuspected);
-        if (!leader.equals(maxRankedProcess)) {
+        if (maxRankedProcess != null && !maxRankedProcess.equals(leader)) {
             leader = maxRankedProcess;
 
             Protocol.EldTrust eldTrust = Protocol.EldTrust

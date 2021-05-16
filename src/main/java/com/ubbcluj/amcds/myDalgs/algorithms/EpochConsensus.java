@@ -57,8 +57,10 @@ public class EpochConsensus extends Abstraction {
                     case EP_INTERNAL_WRITE:
                         state = new EpState(ets, bebDeliver.getMessage().getEpInternalWrite().getValue());
                         triggerPlSendEpAccept(bebDeliver.getSender());
+                        return true;
                     case EP_INTERNAL_DECIDED:
                         triggerEpDecide(bebDeliver.getMessage().getEpInternalDecided().getValue());
+                        return true;
                     default:
                         return false;
                 }
@@ -73,12 +75,14 @@ public class EpochConsensus extends Abstraction {
                     case EP_INTERNAL_ACCEPT:
                         accepted++;
                         performAcceptedCheck();
+                        return true;
                     default:
                         return false;
                 }
             case EP_ABORT:
                 triggerEpAborted();
                 halted = true;
+                return true;
             default:
                 return false;
         }

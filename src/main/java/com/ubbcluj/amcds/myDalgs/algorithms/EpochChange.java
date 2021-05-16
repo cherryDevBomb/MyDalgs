@@ -74,7 +74,7 @@ public class EpochChange extends Abstraction {
                     .setType(Protocol.Message.Type.EC_START_EPOCH)
                     .setEcStartEpoch(startEpoch)
                     .setFromAbstractionId(this.abstractionId)
-                    .setToAbstractionId(this.abstractionId) // TODO change to parent?
+                    .setToAbstractionId(AbstractionIdUtil.getParentAbstractionId(this.abstractionId))
                     .setSystemId(process.getSystemId())
                     .build();
 

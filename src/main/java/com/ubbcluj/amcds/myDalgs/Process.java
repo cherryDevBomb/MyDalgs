@@ -52,15 +52,15 @@ public class Process implements Runnable, Observer {
                     if (!abstractions.containsKey(message.getToAbstractionId())) {
                         if (message.getToAbstractionId().contains(AbstractionType.NNAR.getId())) {
                             registerAbstraction(new NNAtomicRegister(AbstractionIdUtil.getNamedAncestorAbstractionId(message.getToAbstractionId()), this));
-//                        } else if (message.getToAbstractionId().contains(AbstractionType.UC.getId())) {
-//                            registerAbstraction(new UniformConsensus(message.getToAbstractionId(), this));
-//                        }
-//                        } else if (message.getType() == Protocol.Message.Type.APP_PROPOSE) {
-//                            registerAbstraction(new UniformConsensus(AbstractionIdUtil.getNamedAbstractionId(message.getToAbstractionId(), AbstractionType.UC, message.getAppPropose().getTopic()), this));
-//                        }
                         }
                     }
-                    abstractions.get(message.getToAbstractionId()).handle(message); //TODO only handle if can
+                    if (abstractions.containsKey(message.getToAbstractionId())) {
+                        if (!abstractions.get(message.getToAbstractionId()).handle(message) && shouldKeepMessage(message)) {
+                            addMessageToQueue(message);
+                        }
+                    } else {
+                        addMessageToQueue(message);
+                    }
                 } catch (InterruptedException interruptedException) {
                     log.error("Error handling message.");
                 }
@@ -95,6 +95,11 @@ public class Process implements Runnable, Observer {
         } catch (InterruptedException e) {
             log.error("Error adding message to queue.");
         }
+    }
+
+    private boolean shouldKeepMessage(Protocol.Message message) {
+        return Protocol.Message.Type.EP_ABORTED.equals(message.getType()) ||
+                Protocol.Message.Type.EP_DECIDE.equals(message.getType());
     }
 
     private void register() {
