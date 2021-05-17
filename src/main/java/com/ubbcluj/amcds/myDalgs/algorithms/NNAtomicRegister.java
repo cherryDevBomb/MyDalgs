@@ -69,14 +69,14 @@ public class NNAtomicRegister extends Abstraction {
                             triggerPlDeliverValue(plDeliver.getSender(), nnarInternalValue.getReadId(), value);
                             return true;
                         }
-                        return true;
+                        return false;
                     case NNAR_INTERNAL_ACK:
                         Protocol.NnarInternalAck nnarInternalAck = plDeliver.getMessage().getNnarInternalAck();
                         if (nnarInternalAck.getReadId() == this.readId) {
                             triggerPlDeliverAck(plDeliver.getSender(), nnarInternalAck.getReadId());
                             return true;
                         }
-                        return true;
+                        return false;
                     default:
                         return false;
                 }

@@ -99,7 +99,9 @@ public class Process implements Runnable, Observer {
 
     private boolean shouldKeepMessage(Protocol.Message message) {
         return Protocol.Message.Type.EP_ABORTED.equals(message.getType()) ||
-                Protocol.Message.Type.EP_DECIDE.equals(message.getType());
+                Protocol.Message.Type.EP_DECIDE.equals(message.getType()) ||
+                Protocol.Message.Type.PL_DELIVER.equals(message.getType()) &&
+                        (Protocol.Message.Type.NNAR_INTERNAL_VALUE.equals(message.getPlDeliver().getMessage().getType()) || Protocol.Message.Type.NNAR_INTERNAL_ACK.equals(message.getPlDeliver().getMessage().getType()));
     }
 
     private void register() {

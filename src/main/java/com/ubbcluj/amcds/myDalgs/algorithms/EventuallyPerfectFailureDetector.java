@@ -5,7 +5,9 @@ import com.ubbcluj.amcds.myDalgs.communication.Protocol;
 import com.ubbcluj.amcds.myDalgs.model.AbstractionType;
 import com.ubbcluj.amcds.myDalgs.util.AbstractionIdUtil;
 
-import java.util.*;
+import java.util.Set;
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.concurrent.CopyOnWriteArraySet;
 
 public class EventuallyPerfectFailureDetector extends Abstraction {
@@ -50,7 +52,7 @@ public class EventuallyPerfectFailureDetector extends Abstraction {
     }
 
     private void handleEpfdTimeout() {
-        Set<Protocol.ProcessId> aliveSuspectIntersection = new CopyOnWriteArraySet<>(alive); // TODO check this
+        Set<Protocol.ProcessId> aliveSuspectIntersection = new CopyOnWriteArraySet<>(alive);
         aliveSuspectIntersection.retainAll(suspected);
         if (!aliveSuspectIntersection.isEmpty()) {
             delay += DELTA;
@@ -118,7 +120,7 @@ public class EventuallyPerfectFailureDetector extends Abstraction {
                 .setType(Protocol.Message.Type.EPFD_SUSPECT)
                 .setEpfdSuspect(epfdSuspect)
                 .setFromAbstractionId(this.abstractionId)
-                .setToAbstractionId(AbstractionIdUtil.getParentAbstractionId(this.abstractionId)) //TODO WTF should be here?
+                .setToAbstractionId(AbstractionIdUtil.getParentAbstractionId(this.abstractionId))
                 .setSystemId(process.getSystemId())
                 .build();
 
@@ -136,7 +138,7 @@ public class EventuallyPerfectFailureDetector extends Abstraction {
                 .setType(Protocol.Message.Type.EPFD_RESTORE)
                 .setEpfdRestore(epfdRestore)
                 .setFromAbstractionId(this.abstractionId)
-                .setToAbstractionId(AbstractionIdUtil.getParentAbstractionId(this.abstractionId)) //TODO WTF should be here?
+                .setToAbstractionId(AbstractionIdUtil.getParentAbstractionId(this.abstractionId))
                 .setSystemId(process.getSystemId())
                 .build();
 

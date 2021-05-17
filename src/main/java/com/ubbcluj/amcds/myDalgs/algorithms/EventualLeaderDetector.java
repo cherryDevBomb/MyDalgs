@@ -54,7 +54,7 @@ public class EventualLeaderDetector extends Abstraction {
                     .setType(Protocol.Message.Type.ELD_TRUST)
                     .setEldTrust(eldTrust)
                     .setFromAbstractionId(this.abstractionId)
-                    .setToAbstractionId(AbstractionIdUtil.getParentAbstractionId(this.abstractionId)) //TODO WTF should be here?
+                    .setToAbstractionId(AbstractionIdUtil.getParentAbstractionId(this.abstractionId))
                     .setSystemId(process.getSystemId())
                     .build();
 
