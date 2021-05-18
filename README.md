@@ -1,7 +1,15 @@
 # MyDalgs
-Algorithms, Models, and Concepts in Distributed Systems Uni assignment
+Implementations of algorithms from "Introduction to Reliable and Secure Distributed Programming"
 
-### Compile proto source
-```
-protoc -I="D:\UBB\master\Sem 2\AMCDS\myDalgs\src\main\resources" --java_out="D:\UBB\master\Sem 2\AMCDS\myDalgs\src\main\java" "D:\UBB\master\Sem 2\AMCDS\myDalgs\src\main\resources\communicationProtocol.proto"
-```
+| ABSTRACTION                         | IMPLEMENTING ALGORITHM                |
+|-------------------------------------|---------------------------------------|
+| (N,N)-Atomic Register               | Read-Impose Write-Consult-Majority    |
+| Uniform Consensus                   | Leader-Driven Consensus               |
+| Epoch Consensus                     | Read/Write Epoch Consensus            |
+| Epoch-Change                        | Leader-Based Epoch-Change             |
+| Eventual Leader Detector            | Monarchical Eventual Leader Detection |
+| Eventually Perfect Failure Detector | Increasing Timeout                    |
+| Best-Effort Broadcast               | Basic Broadcast                       |
+| Perfect Link                        | TCP                                   |
+
+Uni assignment for Algorithms, Models, and Concepts in Distributed Systems.
